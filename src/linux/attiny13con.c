@@ -170,8 +170,13 @@ int tinyChipErase()
 
 	if (buf[0] == 'E' && buf[1] == 'R')
 	{
-		printf("Chip erase confirmed.");
+		printf("Chip erase confirmed.\n");
 		return TRUE;
+	}
+	else if (buf[0] == 'S' && buf[1] == 'F')
+	{
+		printf("Synchronization failed.\n");
+		return FALSE;
 	}
 	else
 	{
