@@ -166,10 +166,25 @@ void wrPage(uint8_t pgNo)
  for (i = 0; i < 16; i++) 
     loadFlashWord(i, datBuf[i]);
  
-  writeFlashPageNear(pgNo << 4);   
+ uint16_t wadr = pgNo  << 4;
+ writeFlashPageNear(wadr);
+
+ // Read back
+ uint16_t crcRB = 0xffff;
+ uint16_t word;
+ for (i = 0; i < 16; i++)
+ {
+	 word = readFlashWord(wadr + i);
+     crcRB = _crc16_update(crcRB, (word & 0xFF00) >> 8);
+     crcRB = _crc16_update(crcRB, word & 0x00FF);
+  }
   
   pwrOffTarget();
-  Serial.print("AC");
+
+  if (crcRB == crc)
+	  Serial.print("AC");
+  else
+	  Serial.print("CF");
 
   return;  
   
