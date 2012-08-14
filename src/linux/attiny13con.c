@@ -143,7 +143,7 @@ int tinyWritePage(unsigned char pageNo, unsigned char* data)
 	}
 	else if (buf[0] == 'C' || buf[1] == 'F')
 	{
-		printf("Verification failed. (Page already written?)");
+		printf("Verification failed. (Page already written?)\n");
 		return FALSE;
 	}
 	else if (buf[0] != 'A' || buf[1] != 'C')
