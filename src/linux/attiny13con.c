@@ -1,3 +1,4 @@
+#include "attiny13con.h"
 #include "serialcon.h"
 #include <stdio.h>
 
@@ -156,4 +157,25 @@ int tinyWritePage(unsigned char pageNo, unsigned char* data)
 	
 	printf("Page verified.\n");
 	return TRUE;
+}
+
+int tinyChipErase()
+{
+	printf("Sending chip erase request.\n");
+	serWrite("ER", 2);
+
+	char buf[3];
+	if (!serRead(buf, 3, TRUE))
+			return FALSE;
+
+	if (buf[0] == 'E' && buf[1] == 'R')
+	{
+		printf("Chip erase confirmed.");
+		return TRUE;
+	}
+	else
+	{
+		printf("Unexpected response '%c%c'.\n", buf[0], buf[1]);
+		return FALSE;
+	}
 }

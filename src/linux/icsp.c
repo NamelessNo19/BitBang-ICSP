@@ -4,12 +4,14 @@
 #include <unistd.h>
 
 #include "serialcon.h"
+#include "attiny13con.h"
 
 typedef struct conf_s 
 {
 	char *port;
 	int read;
 	int write;
+	int erase;
 	unsigned char pageNo;
 	int ident;
 } conf_t;
@@ -31,6 +33,19 @@ int main (int argc, char **argv)
 	if (!verifyConf(&conf))
 		return 2;
 	
+	if (conf.erase)
+		{
+			printf("Are you sure you want to perform a chip erase? (Y/N): ");
+			char in;
+			scanf("%c", &in);
+			if (in != 'y' && in != 'Y')
+			{
+				printf("Aborted.");
+				return;
+			}
+		}
+
+
 	if (!serOpen(conf.port))
 		return 3;
 		
@@ -62,13 +77,12 @@ int main (int argc, char **argv)
 	
 	if (conf.ident) 
 		tinyIdent();
-	
-	
-	if (conf.read)
+	else if (conf.read)
 		tinyReadPage(conf.pageNo);
-		
-	if (conf.write)
+	else if (conf.write)
 		tinyWritePage(conf.pageNo, &tDat);
+	else if (conf.erase)
+		tinyChipErase();
 		
 		
 		
@@ -88,13 +102,17 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	conf->read = FALSE;
 	conf->ident = FALSE;
 	conf->write = FALSE;
+	conf->erase = FALSE;
 	conf->pageNo = 0;
 	 
-	 while ((ai = getopt (argc, argv, "ip:r:w:")) != -1)
+	 while ((ai = getopt (argc, argv, "ip:r:w:e")) != -1)
          switch (ai)
            {
            case 'i':
              conf->ident = TRUE;
+             break;
+           case 'e':
+             conf->erase = TRUE;
              break;
            case 'p':
              conf->port = optarg;
@@ -140,7 +158,7 @@ int verifyConf(conf_t *conf)
 		return FALSE;
 	}
 	
-	if (!conf->read && !conf->ident && !conf->write)
+	if (!conf->read && !conf->ident && !conf->write && !conf->erase)
 	{
 		printf("No operation specified.\n");
 		return FALSE;
@@ -148,22 +166,40 @@ int verifyConf(conf_t *conf)
 	
 	if (conf->read && conf->ident)
 	{
-		printf("Incompatibel arguments '-r' and '-i'.\n");
+		printf("Incompatible arguments '-r' and '-i'.\n");
 		return FALSE;
 	}
 	
 	if (conf->write && conf->ident)
 	{
-		printf("Incompatibel arguments '-w' and '-i'.\n");
+		printf("Incompatible arguments '-w' and '-i'.\n");
 		return FALSE;
 	}
 	
 	if (conf->write && conf->read)
 	{
-		printf("Incompatibel arguments '-w' and '-r'.\n");
+		printf("Incompatible arguments '-w' and '-r'.\n");
 		return FALSE;
 	}
 	
+	if (conf->erase && conf->ident)
+	{
+		printf("Incompatible arguments '-e' and '-i'.\n");
+		return FALSE;
+	}
+
+	if (conf->erase && conf->read)
+	{
+		printf("Incompatible arguments '-e' and '-r'.\n");
+			return FALSE;
+	}
+
+	if (conf->erase && conf->write)
+	{
+		printf("Incompatible arguments '-e' and '-w'.\n");
+			return FALSE;
+	}
+
 	
 	return TRUE;
 }
