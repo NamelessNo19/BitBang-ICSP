@@ -24,11 +24,11 @@ int tinyIdent()
 		return FALSE;
 	
 	printf("\n");
-	printf("-----------------------------\n");
-	printf("Manufactor ID:\t%#04X\n", buf[0]);
+	printf("--------------------------------\n");
+	printf("Manufacturer ID:\t%#04X\n", buf[0]);
 	printf("Memory ID:\t%#04X\n",  buf[1]);
 	printf("Device ID:\t%#04X\n", buf[2]);
-	printf("-----------------------------\n");
+	printf("--------------------------------\n");
 	printf("\n");
 
 	return TRUE;
@@ -51,7 +51,7 @@ int tinyReadPage(unsigned char pageNo)
 	}
 	else if (buf[0] == 'I' && buf[1] == 'M')
 	{
-		printf("Device ID missmatch.\n");
+		printf("Device ID mismatch.\n");
 		return FALSE;
 	}	else if (buf[0] != 'R' || buf[1] != 'P')
 	{
@@ -118,7 +118,7 @@ int tinyWritePage(unsigned char pageNo, unsigned char* data)
 		printf("Checksum OK. Start writing...\n");
 	else
 	{
-		printf("Checksum missmatch. Expected %#06x, got %#06x.\n", crcCal, crcSer);
+		printf("Checksum mismatch. Expected %#06x, got %#06x.\n", crcCal, crcSer);
 		printf("Cancel writing.\n");
 		serWrite("NA", 2);
 		return FALSE;
@@ -128,7 +128,7 @@ int tinyWritePage(unsigned char pageNo, unsigned char* data)
 	
 	if (!serRead(buf, 3, TRUE))
 	{
-		printf("Confirmation timed out.\n");
+		printf("Verification timed out.\n");
 		return FALSE;
 	}	
 	else if (buf[0] == 'S' && buf[1] == 'F')
@@ -138,17 +138,22 @@ int tinyWritePage(unsigned char pageNo, unsigned char* data)
 	}
 	else if (buf[0] == 'I' && buf[1] == 'M')
 	{
-		printf("Device ID missmatch.\n");
+		printf("Device ID mismatch.\n");
 		return FALSE;
-	}	
+	}
+	else if (buf[0] != 'C' || buf[1] != 'F')
+	{
+		printf("Verification failed. (Page already written?)");
+		return FALSE;
+	}
 	else if (buf[0] != 'A' || buf[1] != 'C')
 	{
-		printf("Confirmation failed '%c%c'.\n", buf[0], buf[1]);
+		printf("Unexpected response '%c%c'.\n", buf[0], buf[1]);
 		return FALSE;
 	}
 	
 	
 	
-	printf("Write confirmed.\n");
+	printf("Page verified.\n");
 	return TRUE;
 }
