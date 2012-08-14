@@ -40,7 +40,7 @@ int main (int argc, char **argv)
 			scanf("%c", &in);
 			if (in != 'y' && in != 'Y')
 			{
-				printf("Aborted.");
+				printf("Aborted.\n");
 				return;
 			}
 		}
@@ -80,7 +80,7 @@ int main (int argc, char **argv)
 	else if (conf.read)
 		tinyReadPage(conf.pageNo);
 	else if (conf.write)
-		tinyWritePage(conf.pageNo, &tDat);
+		tinyWritePage(conf.pageNo, &tDat[0]);
 	else if (conf.erase)
 		tinyChipErase();
 		
