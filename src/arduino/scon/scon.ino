@@ -26,10 +26,13 @@ void setup()
   err = -1;
   ledpwr = 0;
  Serial.begin(9600);
- Serial.print("SYNC");
+ Serial.write('S'); 
+ Serial.write('Y'); 
+ Serial.write('N');
+ Serial.write('C'); 
  Serial.flush();
  delay(100);
- Serial.print("!"); 
+ Serial.write('!'); 
 }
 
 void loop()
@@ -61,6 +64,17 @@ void loop()
     while (Serial.available() == 0) delay(100);
     Serial.readBytes(&inbuf[0], 1);
     wrPage(inbuf[0]);
+  }
+  else if (inbuf[0] == 'E' && inbuf[1] == 'R')
+  {
+    if (initTarget())
+    {
+      chipErase();
+      pwrOffTarget();
+      Serial.print("ER");
+    }
+    else
+    pwrOffTarget();
   }
 }
 
