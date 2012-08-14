@@ -142,9 +142,10 @@ void wrPage(uint8_t pgNo)
   for (i = 0; i < 16; i++)
   {
     Serial.readBytes(&inbuf[0], 2);     
-    datBuf[i] = 0 | ((uint16_t) inbuf[0] << 8) | inbuf[1];
-    crc = _crc16_update(crc, inbuf[0]);
-    crc = _crc16_update(crc, inbuf[1]);
+    datBuf[i] =  (inbuf[1] & 0xFF);
+    datBuf[i] |= (inbuf[0] & 0xFF) << 8;
+    crc = _crc16_update(crc, (uint8_t) inbuf[0]);
+    crc = _crc16_update(crc, (uint8_t) inbuf[1]);
   }
   
   Serial.write('W');
@@ -162,7 +163,7 @@ void wrPage(uint8_t pgNo)
     return;  
   
   
-  for (i = 0; i < 16; i++)
+ for (i = 0; i < 16; i++) 
     loadFlashWord(i, datBuf[i]);
  
   writeFlashPageNear(pgNo << 4);   

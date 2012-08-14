@@ -97,8 +97,9 @@ int tinyWritePage(unsigned char pageNo, unsigned char* data)
 	
 	uint16_t crcCal = 0xFFFF;
 	int i;
-	for (i = 0; i < 32; i++)
-		crcCal = crc16_update(crcCal, data[i]);
+	for (i = 0; i < 32; i++) 
+	  crcCal = crc16_update(crcCal, data[i]);
+
 	
 	
 	
