@@ -24,11 +24,11 @@ int tinyIdent()
 		return FALSE;
 	
 	printf("\n");
-	printf("--------------------------------\n");
-	printf("Manufacturer ID:\t%#04X\n", buf[0]);
+	printf("------------------------------\n");
+	printf("Man. ID:\t%#04X\n", buf[0]);
 	printf("Memory ID:\t%#04X\n",  buf[1]);
 	printf("Device ID:\t%#04X\n", buf[2]);
-	printf("--------------------------------\n");
+	printf("------------------------------\n");
 	printf("\n");
 
 	return TRUE;
@@ -141,7 +141,7 @@ int tinyWritePage(unsigned char pageNo, unsigned char* data)
 		printf("Device ID mismatch.\n");
 		return FALSE;
 	}
-	else if (buf[0] != 'C' || buf[1] != 'F')
+	else if (buf[0] == 'C' || buf[1] == 'F')
 	{
 		printf("Verification failed. (Page already written?)");
 		return FALSE;
