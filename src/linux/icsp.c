@@ -332,7 +332,7 @@ void writeHex(unsigned char* hexdat)
 
 
       pgno++;
-      usleep(750 * 1000);
+      usleep(150 * 1000);
     }
   printf("Hexfile successfully written.\n");
 
