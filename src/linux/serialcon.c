@@ -56,13 +56,16 @@ void serWrite(char *buf, size_t len)
 
 int serRead(char *buf, size_t len, int fillBuffer)
 {
-    if (!portOpen)
+    if (!portOpen) 
 		return FALSE;
 		
 	memset(buf, '\0', len);
 	int rv;
 	size_t readCount = 0;
 	len--; // Assure string termination 
+
+	timeout.tv_sec = TIMEOUT_SEC;
+	timeout.tv_usec = 0;
    
    do
    {
