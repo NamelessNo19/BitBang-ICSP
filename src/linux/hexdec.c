@@ -8,6 +8,7 @@
 
 #include "hexdec.h"
 
+int hexFd;
 
 
 int skipLine();
@@ -18,14 +19,14 @@ uint8_t readByte();
 long parseHexFile (int hexFileDesc, unsigned char* buffer)
 {
 	
-	
+	hexFd = hexFileDesc;
 	int cnt;
 	long total = 0;
    
 	while ((cnt = parseHexLine(buffer)) >= 0)
     	total += cnt;		
 	
-   if (lv == -1)
+   if (cnt == -1)
    {
 	   return total;
    }
