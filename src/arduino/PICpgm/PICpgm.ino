@@ -12,15 +12,15 @@
 #define del delayMicroseconds(500)
 
 #define CMD_CI B0000
-#define CMD_SOTBAT 0010b
+#define CMD_SOTBAT B0010
 #define CMD_TBRD B1000
 #define CMD_TBRD_POSI B1001
-#define CMD_TBRD_POSD 1010b 
-#define CMD_TBRD_PREI 1011b
-#define CMD_TBWR 1100b
+#define CMD_TBRD_POSD B1010 
+#define CMD_TBRD_PREI B1011
+#define CMD_TBWR B1100
 #define CMD_TBWR_POSI2 B1101
-#define CMD_TBWR_SP_POSI2 1110b
-#define CMD_TBWR_SP 1111b
+#define CMD_TBWR_SP_POSI2 B1110
+#define CMD_TBWR_SP B1111
 
 #include <inttypes.h>
 
@@ -148,18 +148,26 @@ uint8_t cmdIn(uint8_t cmd, uint8_t dat)
   
 }
 
+inline void setTablePtr(const uint8_t up, const uint8_t high, const uint8_t low)
+{
+  cmdOut(CMD_CI, 0x0E00 | up);
+  cmdOut(CMD_CI, 0x6EF8);
+  cmdOut(CMD_CI, 0x0E00 | high);
+  cmdOut(CMD_CI, 0x6EF7);
+  cmdOut(CMD_CI, 0x0E00 | low);
+  cmdOut(CMD_CI, 0x6EF6);
+
+} 
+
+
 uint16_t readID()
 {
   uint8_t lo = 0;
   uint8_t hi = 0;
   uint16_t res = 0;
   
-  cmdOut(CMD_CI, 0x0E3F);
-  cmdOut(CMD_CI, 0x6EF8);
-  cmdOut(CMD_CI, 0x0EFF);
-  cmdOut(CMD_CI, 0x6EF7);
-  cmdOut(CMD_CI, 0x0EFE);
-  cmdOut(CMD_CI, 0x6EF6);
+  
+  setTablePtr(0x3F, 0xFF, 0xFE); 
   
   lo = cmdIn(CMD_TBRD_POSI, 0);
   hi = cmdIn(CMD_TBRD, 0);
@@ -184,5 +192,6 @@ void loop()
  Serial.begin(9600);
  Serial.print(id, HEX);
  Serial.write('\n');
+ delay(500);
  Serial.end();
 }
