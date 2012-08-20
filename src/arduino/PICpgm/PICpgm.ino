@@ -15,6 +15,8 @@
 #include <inttypes.h>
 #include "PIC18Fconst.h"
 
+int cntr;
+
 void setup()
 {
   pinMode(pinMCLR, OUTPUT);
@@ -27,6 +29,7 @@ void setup()
   digitalWrite(pinPGM, LOW);
   digitalWrite(pinPGC, LOW);
   digitalWrite(pinStart, LOW);
+  cntr = 0;
 }
 
 void enterPM()
@@ -139,6 +142,32 @@ uint8_t cmdIn(uint8_t cmd, uint8_t dat)
   
 }
 
+void clkFlashWrite()
+{
+  datOUT;
+  digitalWrite(pinPGD, LOW);
+  int i;
+  // 3 Clocks
+  for (i = 0; i < 3; i++)
+  {
+    clkHI; del; clkLO; del;
+    
+  }
+  
+  clkHI;
+  delayMicroseconds(DELAY_P9);
+  clkLO;
+  delayMicroseconds(DELAY_P10);
+  
+  // 16 Clocks
+  for (i = 0; i < 16; i++)
+  {
+    clkHI; del; clkLO; del;
+    
+  }
+  
+}
+
 void setTablePtr(const uint8_t up, const uint8_t high, const uint8_t low)
 {
   cmdOut(CMD_OUT_CI, 0x0E00 | up);
@@ -163,17 +192,32 @@ void setTablePtr(uint32_t memAdr)
 }
 
 
-inline uint16_t readID()
+inline uint16_t readWord(uint32_t memAdr)
 {
-
   uint16_t res;
-
-  setTablePtr(MEM_DEVID1); 
+  setTablePtr(0x3FFFFEL & memAdr); 
   res = cmdIn(CMD_IN_TBRD_POSI, 0);
   res  |= cmdIn(CMD_IN_TBRD, 0) << 8;
   return res;
 }
 
+inline void enableFlashWrite()
+{
+  cmdOut(CMD_OUT_CI, 0x8EA6);  // BSF  EECON1, EEPGD
+  cmdOut(CMD_OUT_CI, 0x8EA6);  // BCF  EECON1, CFGS
+}
+
+void writeTest()
+{
+  enableFlashWrite();
+  setTablePtr(0x000800);
+  cmdOut(CMD_OUT_TBWR_POSI2, 0xFB0B);
+  cmdOut(CMD_OUT_TBWR_SP_POSI2, 0xFACA);
+  clkFlashWrite();
+}
+  
+  
+  
 void loop()
 {
   pinMode(13, OUTPUT);
@@ -182,11 +226,16 @@ void loop()
  digitalWrite(13, LOW);
  enterPM();
  del;
- uint16_t id = readID();
+ uint16_t id;
+
+ id = readWord(0x000802);
+
+ 
  exitPM();
  Serial.begin(9600);
  Serial.print(id, HEX);
  Serial.write('\n');
  delay(500);
  Serial.end();
+ cntr++;
 }
