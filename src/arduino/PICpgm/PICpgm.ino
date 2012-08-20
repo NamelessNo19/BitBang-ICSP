@@ -51,9 +51,9 @@ void exitPM()
 {
   clkLO;
   datIN;
-  delayMicroseconds(DELAY_P16);
-  digitalWrite(pinMCLR, LOW)
-  delayMicroseconds(DELAY_P18);
+  del;
+  digitalWrite(pinMCLR, LOW);
+  del;
   digitalWrite(pinPGM, LOW);
   del;
 }
