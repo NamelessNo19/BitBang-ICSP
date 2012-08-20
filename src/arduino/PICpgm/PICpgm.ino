@@ -4,6 +4,9 @@
 #define pinPGM 3
 
 #define pinStart 9
+#define pinVSense 12
+#define pinSpeaker 6
+
 
 #define clkHI digitalWrite(pinPGC, HIGH);
 #define clkLO digitalWrite(pinPGC, LOW);
@@ -24,12 +27,21 @@ void setup()
   pinMode(pinPGC, OUTPUT);
   pinMode(pinPGM, OUTPUT);
   pinMode(pinStart, INPUT);
+  pinMode(pinVSense, INPUT);
+  pinMode(pinSpeaker, OUTPUT);
+  
   digitalWrite(pinMCLR, LOW);
   digitalWrite(pinPGD, LOW);
   digitalWrite(pinPGM, LOW);
   digitalWrite(pinPGC, LOW);
   digitalWrite(pinStart, LOW);
+  digitalWrite(pinVSense, LOW);
+  digitalWrite(pinSpeaker, LOW);
   cntr = 0;
+  
+   tone(pinSpeaker, 1360);
+   delay(200);
+   noTone(pinSpeaker);
 }
 
 void enterPM()
@@ -236,16 +248,20 @@ void writeTest()
 
 void bulkErase(const uint16_t erOpt)
 {
-	const uint8_t optLo = erOpt & 0x00FF;
-	const uint8_t optHi = (erOpt & 0xFF00) >> 8;
+	uint16_t optLo = erOpt & 0x00FF;
+	uint16_t optHi = ((erOpt & 0xFF00) >> 8) & 0x00FF;
+
+        optLo |= optLo << 8;
+        optHi |= optHi << 8;
 
 	setTablePtr(MEM_BLKER_OPTH);
-	cmdOut(CMD_OUT_TBWR, (optHi << 8) & optHi);
+	cmdOut(CMD_OUT_TBWR, (optHi << 8) | optHi);
 	setTablePtr(MEM_BLKER_OPTL);
-	cmdOut(CMD_OUT_TBWR, (optLo << 8) & optLo);
+	cmdOut(CMD_OUT_TBWR, (optLo << 8) | optLo);
+
+        cmdOut(CMD_OUT_CI, 0); // NOP
 
 	// Clocking erase
-
 	datOUT;
 	digitalWrite(pinPGD, LOW);
 	int i;
@@ -256,7 +272,6 @@ void bulkErase(const uint16_t erOpt)
 
 	  }
 
-
 	delayMicroseconds(DELAY_P11);
 	delayMicroseconds(DELAY_P10);
 
@@ -264,7 +279,6 @@ void bulkErase(const uint16_t erOpt)
 	for (i = 0; i < 16; i++)
 	  {
 	    clkHI; del; clkLO; del;
-
 	  }
 }
 
@@ -276,20 +290,44 @@ void loop()
 {
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
+  
  while (!digitalRead(pinStart)) delay(100);
- digitalWrite(13, LOW);
- enterPM();
- del;
- uint16_t id;
-
- id = readWord(0x000802);
+ while (digitalRead(pinStart)) delay(100);
 
  
+ digitalWrite(13, LOW);
+ 
+ if (!digitalRead(pinVSense))
+ {
+   tone(pinSpeaker, 880);
+   delay(300);
+   noTone(pinSpeaker);
+   delay(200);
+   tone(pinSpeaker, 880);
+   delay(300);
+   noTone(pinSpeaker);
+   delay(300);
+   return;
+ }
+ 
+ enterPM();
+ del;
+ uint16_t id = 0xB00B;
+
+ 
+  id = readWord(0x000800);
+ 
+ 
  exitPM();
- Serial.begin(9600);
+  Serial.begin(9600);
  Serial.print(id, HEX);
  Serial.write('\n');
- delay(500);
  Serial.end();
  cntr++;
+ 
+ tone(pinSpeaker, 880);
+ delay(200);
+ tone(pinSpeaker, 1188);
+ delay(300);
+ noTone(pinSpeaker);
 }
