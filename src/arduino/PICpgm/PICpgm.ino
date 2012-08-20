@@ -9,7 +9,7 @@
 #define clkLO digitalWrite(pinPGC, LOW);
 #define datIN pinMode(pinPGD, INPUT)
 #define datOUT pinMode(pinPGD, OUTPUT);
-#define del delayMicroseconds(500)
+#define del delayMicroseconds(200)
 
 
 #include <inttypes.h>
@@ -39,11 +39,11 @@ void enterPM()
   digitalWrite(pinPGM, LOW);
   digitalWrite(pinPGC, LOW);
   datIN;
-  del; del; del; del;
+  del; del;
   digitalWrite(pinPGM, HIGH);
-  del;
+  delayMicroseconds(DELAY_P15);
   digitalWrite(pinMCLR, HIGH);
-  del;
+  delayMicroseconds(DELAY_P12);
   datOUT;
 }
 
@@ -51,9 +51,9 @@ void exitPM()
 {
   clkLO;
   datIN;
-  del;
-  digitalWrite(pinMCLR, LOW);
-  del;
+  delayMicroseconds(DELAY_P16);
+  digitalWrite(pinMCLR, LOW)
+  delayMicroseconds(DELAY_P18);
   digitalWrite(pinPGM, LOW);
   del;
 }
