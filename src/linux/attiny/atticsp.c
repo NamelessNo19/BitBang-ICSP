@@ -34,7 +34,7 @@ int main (int argc, char **argv)
 {
 	conf_t conf ;
 	
-	printf(" *** BitBang-ICSP BUILD %s, %s *** \n", __DATE__, __TIME__);
+	printf(" *** BitBang-ICSP (ATTiny) BUILD %s, %s *** \n", __DATE__, __TIME__);
 
 	if (!parseArgs(argc, argv, &conf))
 		return 1;
