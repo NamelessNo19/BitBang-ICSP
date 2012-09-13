@@ -264,7 +264,11 @@ int decodeHex(char* path, unsigned char* data)
       return FALSE;
     }
 
-  long count =  parseHexFile(hfd, data);
+  datSeq_t hexseq[64];
+
+  long count =  parseHexFile(hfd, &hexseq[0]);
+  seqToByteArray(&hexseq[0], (uint8_t*) data, 0, 1024);
+  cleanUpSeq(&hexseq[0])
 
   if (count < 0)
     {
