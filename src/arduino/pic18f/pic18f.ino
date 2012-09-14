@@ -151,11 +151,7 @@ void rdBlock(const uint8_t blockNo)
 
 
     uint32_t blkSA;
-    if (blockNo == 0xB)
-    	blkSA = 0;
-    else if (blockNo == 0)
-    	blkSA = 0x800;
-    else if (blockNo < 4)
+    if (blockNo < 4)
         blkSA = blockNo * 0x2000;
     else
     {
