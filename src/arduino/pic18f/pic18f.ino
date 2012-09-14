@@ -40,7 +40,7 @@ void setup()
   
   err = -1;
   
-  
+ Serial.setTimeout(2000);
  Serial.begin(9600);
  Serial.write('S'); 
  Serial.write('Y'); 
@@ -143,24 +143,58 @@ void ident()
   Serial.write(0xAB); 
   Serial.flush();  
 }
-/*
-void rdPage(uint8_t pgNo)
+
+void rdBlock(const uint8_t blockNo)
 {
     if (!initTarget()) return;
     
-    Serial.print("RP");
-    
-    readFlashPage(pgNo, &datBuf[0]);
-    pwrOffTarget();
-    int i;
-    for (i = 0; i < 16; i++)
+
+
+    uint32_t blkSA;
+    if (blockNo == 0xB)
+    	blkSA = 0;
+    else if (blockNo < 4)
+    	blkSA = (blockNo + 1) * 0x800;
+    else
     {
-      Serial.write((char) ((datBuf[i] & 0xFF00) >> 8));
-      Serial.write((char)(datBuf[i] & 0x00FF));
-      Serial.flush();
-    }  
+    	Serial.print("IA");
+    	pwrOffTarget();
+    	return;
+    }
+
+    Serial.print("RB");
+
+
+
+    uint16_t pgNo;
+    uint8_t i;
+    
+    setTablePtr(blkSA);
+    for (pgNo = 0; pgNo < 256; pgNo++)
+    {
+    	Serial.flush();
+
+    	for (i = 0; i < 32; i++)
+    		Serial.write(readByte());
+
+    	if (Serial.readBytes(&inbuf[0], 2) != 2)
+    	{
+    		Serial.print("TC");
+    		break;
+    	}
+
+    	if (inbuf[0] != 'A' || inbuf[1] != 'C')
+    	{
+    		Serial.print("TC");
+    		break;
+    	}
+    }
+
+    Serial.print("AC");
+    pwrOffTarget();
 }
 
+/*
 void wrPage(uint8_t pgNo)
 {
   digitalWrite(13, HIGH);

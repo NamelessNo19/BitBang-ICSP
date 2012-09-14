@@ -12,10 +12,10 @@
 typedef struct conf_s 
 {
   char *port;
-  int read;
+  int dump;
   int write;
   int erase;
-  unsigned char pageNo;
+  unsigned char blockNo;
   char* hexfile;
   int hashex;
   int ident;
@@ -93,9 +93,9 @@ int main (int argc, char **argv)
 	while (!rdy);
 	
 	if (conf.ident) 
-		tinyIdent();
-	else if (conf.read)
-		tinyReadPage(conf.pageNo);
+		picIdent();
+	else if (conf.dump)
+		picDumpBlock(conf.blockNo);
 	else if (conf.write)
 		tinyWritePage(conf.pageNo, &tDat[0]);
 	else if (conf.erase)
@@ -121,7 +121,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	int ai;
 	
 	conf->port = NULL;
-	conf->read = FALSE;
+	conf->dump = FALSE;
 	conf->ident = FALSE;
 	conf->write = FALSE;
 	conf->erase = FALSE;
@@ -129,7 +129,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	conf->hexfile = NULL;
 	conf->pageNo = 0;
 	 
-	 while ((ai = getopt (argc, argv, "ip:r:w:eh:")) != -1)
+	 while ((ai = getopt (argc, argv, "ip:d:w:eh:")) != -1)
          switch (ai)
            {
            case 'i':
@@ -141,9 +141,9 @@ int parseArgs(int argc, char **argv, conf_t *conf)
            case 'p':
              conf->port = optarg;
              break;
-           case 'r':
-	     conf->read = TRUE;
-	     conf->pageNo = atoi(optarg);
+           case 'd':
+	     conf->dump = TRUE;
+	     conf->blockNo = atoi(optarg);
              break;
 	   case 'w':
 	     conf->write = TRUE;
@@ -154,7 +154,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	     conf->hexfile = optarg;
 	     break;
            case '?':
-             if (optopt == 'p' || optopt == 'r' || optopt == 'w')
+             if (optopt == 'p' || optopt == 'd' || optopt == 'w')
                fprintf (stderr, "Option -%c requires an argument.\n", optopt);
              else if (isprint (optopt))
                fprintf (stderr, "Unknown option `-%c'.\n", optopt);
@@ -186,16 +186,16 @@ int verifyConf(conf_t *conf)
 		return FALSE;
 	}
 	
-	if (!conf->read && !conf->ident && !conf->write && !conf->erase && !conf->hashex)
+	if (!conf->dump && !conf->ident && !conf->write && !conf->erase && !conf->hashex)
 	{
 		printf("No operation specified.\n");
 		return FALSE;
 	}
 
 	
-	if (conf->read && conf->ident)
+	if (conf->dump && conf->ident)
 	{
-		printf("Incompatible arguments '-r' and '-i'.\n");
+		printf("Incompatible arguments '-d' and '-i'.\n");
 		return FALSE;
 	}
 	
@@ -205,9 +205,9 @@ int verifyConf(conf_t *conf)
 		return FALSE;
 	}
 	
-	if (conf->write && conf->read)
+	if (conf->write && conf->dump)
 	{
-		printf("Incompatible arguments '-w' and '-r'.\n");
+		printf("Incompatible arguments '-w' and '-d'.\n");
 		return FALSE;
 	}
 	
@@ -217,9 +217,9 @@ int verifyConf(conf_t *conf)
 		return FALSE;
 	}
 
-	if (conf->erase && conf->read)
+	if (conf->erase && conf->dump)
 	{
-		printf("Incompatible arguments '-e' and '-r'.\n");
+		printf("Incompatible arguments '-e' and '-d'.\n");
 			return FALSE;
 	}
 
@@ -229,9 +229,9 @@ int verifyConf(conf_t *conf)
 			return FALSE;
 	}
 
-	if (conf->read && conf->hashex)
+	if (conf->dump && conf->hashex)
 	{
-		printf("Incompatible arguments '-r' and '-h'.\n");
+		printf("Incompatible arguments '-d' and '-h'.\n");
 		return FALSE;
 	}
 	if (conf->ident && conf->hashex)

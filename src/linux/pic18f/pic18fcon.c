@@ -1,8 +1,10 @@
 #include "pic18fcon.h"
 #include "serialcon.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-int tinyIdent()
+int picIdent()
 {
 	printf("Sending identification request.\n");
 	serWrite("ID", 2);
@@ -54,13 +56,13 @@ int tinyIdent()
 	return TRUE;
 }
 
-int tinyReadPage(unsigned char pageNo)
+int picDumpBlock(unsigned char blockNo)
 {
 	unsigned char buf[33];
 	pageNo &= 0x1F;
-	printf("Sending page %d read request.\n", pageNo);
-	serWrite("RP", 2);
-	serWrite(&pageNo, 1);
+	printf("Sending block %d read request.\n", pageNo);
+	serWrite("RB", 2);
+	serWrite(&blockNo, 1);
 	
 	if (!serRead(buf, 3, TRUE))
 		return FALSE;
@@ -69,39 +71,44 @@ int tinyReadPage(unsigned char pageNo)
 		printf("Synchronization failed.\n");
 		return FALSE;
 	}
-	else if (buf[0] == 'I' && buf[1] == 'M')
+	else if (buf[0] == 'I' && buf[1] == 'A')
 	{
-		printf("Device ID mismatch.\n");
+		printf("Invalid Block.\n");
 		return FALSE;
-	}	else if (buf[0] != 'R' || buf[1] != 'P')
+	}	else if (buf[0] != 'R' || buf[1] != 'B')
 	{
 		printf("Invalid response '%c%c'.\n", buf[0], buf[1]);
 		return FALSE;
 	}
 	
-	printf("Receiving data...\n");
 	
-	if (!serRead(buf, 33, TRUE))
-		return FALSE;
-		
-	uint16_t word;
-	int i;
-	printf("\n");
-	printf("Word Adr.|\t\t      Data\n");
-	printf("---------+-------------------------------------\n");
-	for (i = 0; i < 16; i++)
+	uint8_t* blkDat = malloc(8192);
+
+
+	printf("Receiving block data...");
+
+	uint16_t pgNo;
+
+
+
+	for (pgNo = 0; pgNo < 256; pgNo++)
 	{
-		if (i % 4 == 0) 
-			printf(  "%#06x   |\t", (pageNo << 4) + i);
-		word = 0;
-		word |= buf[2*i+1];
-		word |= buf[2*i] << 8;
-		printf("%#06x\t", word);
-		if (i % 4 == 3) 
+		if (!serRead(buf, 33, TRUE))
+		{
+			free(blkDat);
 			printf("\n");
+			return FALSE;
+		}
+
+		memcpy(&blkData[32 * pgNo], &buf[0], 32);
+
+		serWrite("AC", 2);
+
+		printf("\rReceiving block data... %d%%", (pgNo * 100) / 255);
 	}
+
 	printf("\n");
-	
+	free(blkDat);
 	return TRUE;
 }
 

@@ -186,6 +186,11 @@ inline uint16_t readWord(uint32_t memAdr)
   return res;
 }
 
+inline uint8_t readByte()
+{
+	return cmdIn(CMD_IN_TBRD_POSI, 0);
+}
+
 inline void setAccessToFlash()
 {
   cmdOut(CMD_OUT_CI, 0x8EA6);  // BSF  EECON1, EEPGD
