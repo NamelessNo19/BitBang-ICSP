@@ -240,10 +240,12 @@ inline void performRowErase()
 void writeTest()
 {
   setAccessToFlash();
-  setTablePtr(0x000800);
+  enableWrite();
+  setTablePtr(0x002ACA);
   cmdOut(CMD_OUT_TBWR_POSI2, 0xFB0B);
   cmdOut(CMD_OUT_TBWR_SP_POSI2, 0xFACA);
   clkFlashWrite();
+  disableWrite();
 }
 
 void bulkErase(const uint16_t erOpt)
@@ -315,7 +317,10 @@ void loop()
  uint16_t id = 0xB00B;
 
  
-  id = readWord(0x000800);
+  id = readWord(0x002ACA);
+  
+  if(cntr == 1)
+    writeTest();
  
  
  exitPM();

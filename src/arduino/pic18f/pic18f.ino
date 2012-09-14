@@ -74,14 +74,14 @@ void loop()
   {
     ident();
   }
- /*
-  else if (inbuf[0] == 'R' && inbuf[1] == 'P')
+  else if (inbuf[0] == 'R' && inbuf[1] == 'B')
   {
     
     while (Serial.available() == 0) delay(100);
     Serial.readBytes(&inbuf[0], 1);
-    rdPage(inbuf[0]);
+    rdBlock(inbuf[0]);
   }
+ /*
   else if (inbuf[0] == 'W' && inbuf[1] == 'P')
   {
     while (Serial.available() == 0) delay(100);
@@ -153,8 +153,10 @@ void rdBlock(const uint8_t blockNo)
     uint32_t blkSA;
     if (blockNo == 0xB)
     	blkSA = 0;
+    else if (blockNo == 0)
+    	blkSA = 0x800;
     else if (blockNo < 4)
-    	blkSA = (blockNo + 1) * 0x800;
+        blkSA = blockNo * 0x2000;
     else
     {
     	Serial.print("IA");
