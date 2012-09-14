@@ -97,7 +97,7 @@ int main (int argc, char **argv)
 	else if (conf.dump)
 		picDumpBlock(conf.blockNo);
 	else if (conf.write)
-		tinyWritePage(conf.pageNo, &tDat[0]);
+	  ;//	tinyWritePage(conf.pageNo, &tDat[0]);
 	else if (conf.erase)
 		tinyChipErase();
 	else if (conf.hashex) 
@@ -127,7 +127,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	conf->erase = FALSE;
 	conf->hashex = FALSE;
 	conf->hexfile = NULL;
-	conf->pageNo = 0;
+	conf->blockNo = 0;
 	 
 	 while ((ai = getopt (argc, argv, "ip:d:w:eh:")) != -1)
          switch (ai)
@@ -147,7 +147,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
              break;
 	   case 'w':
 	     conf->write = TRUE;
-	     conf->pageNo = atoi(optarg);
+	     conf->blockNo = atoi(optarg);
              break;
 	   case 'h':
 	     conf->hashex = TRUE;

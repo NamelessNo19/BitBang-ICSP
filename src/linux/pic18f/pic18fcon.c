@@ -59,8 +59,7 @@ int picIdent()
 int picDumpBlock(unsigned char blockNo)
 {
 	unsigned char buf[33];
-	pageNo &= 0x1F;
-	printf("Sending block %d read request.\n", pageNo);
+	printf("Sending block %d read request.\n", blockNo);
 	serWrite("RB", 2);
 	serWrite(&blockNo, 1);
 	
@@ -82,10 +81,11 @@ int picDumpBlock(unsigned char blockNo)
 	}
 	
 	
-	uint8_t* blkDat = malloc(8192);
+	uint8_t* blkData = malloc(8192);
 
 
 	printf("Receiving block data...");
+
 
 	uint16_t pgNo;
 
@@ -93,22 +93,21 @@ int picDumpBlock(unsigned char blockNo)
 
 	for (pgNo = 0; pgNo < 256; pgNo++)
 	{
-		if (!serRead(buf, 33, TRUE))
-		{
-			free(blkDat);
-			printf("\n");
-			return FALSE;
-		}
+	  fflush(stdout);
 
-		memcpy(&blkData[32 * pgNo], &buf[0], 32);
-
-		serWrite("AC", 2);
-
-		printf("\rReceiving block data... %d%%", (pgNo * 100) / 255);
+	  if (!serRead(buf, 33, TRUE))
+	    {
+	      free(blkData);
+	      printf("\n");
+	      return FALSE;
+	    }
+	  memcpy(&blkData[32 * pgNo], &buf[0], 32);
+	  serWrite("AC", 2);
+	  printf("\rReceiving block data... %d%%", (pgNo * 100) / 255);
 	}
 
 	printf("\n");
-	free(blkDat);
+	free(blkData);
 	return TRUE;
 }
 
