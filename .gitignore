@@ -2,3 +2,7 @@
 ICSP
 *.~*
 *.*~
+picicsp
+atticsp
+*.bin
+*.conf
