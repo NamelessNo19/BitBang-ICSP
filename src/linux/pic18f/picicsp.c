@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "serialcon.h"
 #include "pic18fcon.h"
@@ -25,6 +26,8 @@ int parseArgs(int argc, char **argv, conf_t *conf);
 int verifyConf(conf_t *conf);
 int decodeHex(char* path, unsigned char* data);
 void writeHex(unsigned char* hexdat);
+void dump(const char* path, unsigned char blockNo);
+
 
 unsigned char tDat[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFF, 0xFF, 0x01, 0x23, 0x00, 0x00, 0xB0, 0x0B, 
 				   0xB0, 0x0B, 0xFF, 0xFF, 0x01, 0x23, 0xAB, 0x47, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
@@ -377,8 +380,5 @@ void dump(const char* path, unsigned char blockNo)
 		printf("Failed.\n");
 
 	free(dat);
-
-}
-
-
+	return;
 }

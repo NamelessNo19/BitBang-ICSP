@@ -99,7 +99,7 @@ int picDumpBlock(unsigned char* blkData, unsigned char blockNo)
 	      printf("\n");
 	      return FALSE;
 	    }
-	  memcpy(blkData[32 * pgNo], &buf[0], 32);
+	  memcpy(blkData + (32 * pgNo), &buf[0], 32);
 	  serWrite("AC", 2);
 	  printf("\rReceiving block data... %d%%", (pgNo * 100) / 255);
 	}
