@@ -11,7 +11,7 @@ int echo(unsigned char c1, unsigned char c2)
 {
 	unsigned char buf[3];
 	buf[0] = c1; buf[1] = c2; buf[2] = '\0';
-	serWrite(&buf, 2);
+	serWrite(&buf[0], 2);
 	buf[0] = '\0'; buf[1] = '\0';
 	
 	if (!serRead(&buf[0], 3, TRUE)) 
@@ -132,7 +132,7 @@ int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
 
 
 	// Write data
-	serWrite(&chunk[0], 32);
+	serWrite(&(*chunk[0]), 32);
 
 	if (!serRead(&buf[0], 3, TRUE))
 		return FALSE;
