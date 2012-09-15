@@ -136,11 +136,10 @@ void ident()
   
 
   uint16_t id = readWord(MEM_DEVID1);
-  pwrOffTarget();
+  
   Serial.print("ID");
   Serial.write((id & 0xFF00) >> 8);
   Serial.write(id & 0xFF);
-  Serial.write(0xAB); 
   Serial.flush();  
 
   const uint8_t memlocs[] = {0, 1, 2, 3, 5, 6, 8, 9, 10, 11, 12, 13};
@@ -148,10 +147,12 @@ void ident()
   uint8_t i;
   for (i = 0; i < 12; i++)
   {
-	  setTablePtr(0x300000L + memlocs[i]);
-	  Serial.write(readByte());
+	setTablePtr(MEM_CONFIG1L + memlocs[i]);
+	Serial.write(cmdIn(CMD_IN_TBRD, 0));
+   
   }
-
+  
+  pwrOffTarget();
 }
 
 void rdBlock(const uint8_t blockNo)

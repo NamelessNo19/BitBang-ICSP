@@ -5,8 +5,7 @@
 #include <string.h>
 
 const char* CONF_REG_STR[] = {"CONFIG1L", "CONFIG1H", "CONFIG2L", "CONFIG2H", "CONFIG3H", "CONFIG4L",
-							  "CONFIG5L", "CONFIG5H", "CONFIG6L", "CONFIG6H", "CONFIG7L", "CONFIG7H"};
-};
+			  "CONFIG5L", "CONFIG5H", "CONFIG6L", "CONFIG6H", "CONFIG7L", "CONFIG7H"};
 
 int picIdent()
 {
@@ -47,15 +46,15 @@ int picIdent()
 
 	// Reading configuration
 	if (!serRead(&buf[0], 13, TRUE))
-				return FALSE;
+		 return FALSE;
 
-	printf("\n----- Model: %s - Revision: %d ----", mod, rev);
+	printf("------\nModel: %s - Revision: %d\n", mod, rev);
 
 	int i;
 
 	for (i = 0; i < 12; i++)
-		printf("%s:\t0x%02X\n", CONF_REG_STR[i], buf[i]);
-
+		printf("%s: 0x%02X\n", CONF_REG_STR[i], buf[i]);
+	printf("------\n");
 
 	return TRUE;
 }
