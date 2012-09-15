@@ -29,10 +29,6 @@ void writeHex(unsigned char* hexdat);
 void dump(const char* path, unsigned char blockNo);
 
 
-unsigned char tDat[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFF, 0xFF, 0x01, 0x23, 0x00, 0x00, 0xB0, 0x0B, 
-				   0xB0, 0x0B, 0xFF, 0xFF, 0x01, 0x23, 0xAB, 0x47, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
-
-
 int main (int argc, char **argv)
 {
 	conf_t conf ;
@@ -45,15 +41,19 @@ int main (int argc, char **argv)
 	if (!verifyConf(&conf))
 		return 2;
 
-	unsigned char hexdat[1024] = {[0 ... 1023] = 0xFF};
+	 datSeq_t* hexdt = malloc(256 * sizeof(datSeq_t));
+
+
+
 	if (conf.hashex && conf.write)
-	  if (!decodeHex(conf.hexfile, &hexdat[0]))
+	  if (!decodeHex(conf.hexfile, hexdt))
 	    {
 	      printf("Aborted.\n");
+	      free(hexdt);
 	      return 0;
 	    }
 	
-	if (conf.erase || conf.write)
+	if (conf.erase)
 		{
 			printf("Are you sure you want to delete the chip's memory? (Y/N): ");
 			char in;
@@ -61,13 +61,17 @@ int main (int argc, char **argv)
 			if (in != 'y' && in != 'Y')
 			{
 				printf("Aborted.\n");
+				free(hexdt);
 				return;
 			}
 		}
 
 
 	if (!serOpen(conf.port))
-		return 3;
+	{
+		 free(hexdt);
+		 return 3;
+	}
 		
 	// Waiting		
 	printf("Waiting for programmer...");
@@ -80,6 +84,7 @@ int main (int argc, char **argv)
 	if (!serRead(&buffer[0], 2, TRUE))
 	{
 		serClose();
+		free(hexdt);
 		return 0;
 	} 
 	else if (buffer[0] != '!')
@@ -100,20 +105,16 @@ int main (int argc, char **argv)
 	else if (conf.dump)
 		dump(conf.hexfile, conf.blockNo);
 	else if (conf.write)
-	  ;//	tinyWritePage(conf.pageNo, &tDat[0]);
+	  writeHex(hexdt);
 	else if (conf.erase)
 	;//	tinyChipErase();
-	else if (conf.hashex) 
-	   // if (!tinyChipErase())
-	      printf("Chip erase failed. Aborting.\n");
-	    else
-	      writeHex(&hexdat[0]);
 		
 		
 		
 	// Finishing
 	serClose();
 	printf("Done.\n");
+	 free(hexdt);
 	return 0;
 }
 
@@ -189,7 +190,7 @@ int verifyConf(conf_t *conf)
 		return FALSE;
 	}
 	
-	if (!conf->dump && !conf->ident && !conf->write && !conf->erase && !conf->hashex)
+	if (!conf->dump && !conf->ident && !conf->write && !conf->erase)
 	{
 		printf("No operation specified.\n");
 		return FALSE;
@@ -237,11 +238,7 @@ int verifyConf(conf_t *conf)
 		printf("Incompatible arguments '-i' and '-h'.\n");
 		return FALSE;
 	}
-	if (conf->write && conf->hashex)
-	{
-		printf("Incompatible arguments '-w' and '-h'.\n");
-		return FALSE;
-	}
+
 	if (conf->erase && conf->hashex)
 	{
 		printf("Incompatible arguments '-e' and '-h'.\n");
@@ -250,7 +247,13 @@ int verifyConf(conf_t *conf)
 
 	if (conf->dump && !conf->hashex)
 	{
-		printf("You need to specify an output directory for dumping.\n");
+		printf("You need to specify an output file for dumping.\n");
+		return FALSE;
+	}
+
+	if (conf->write && !conf->hashex)
+	{
+		printf("You need to specify an input file for writing.\n");
 		return FALSE;
 	}
 
@@ -258,7 +261,7 @@ int verifyConf(conf_t *conf)
 	return TRUE;
 }
 
-int decodeHex(char* path, unsigned char* data)
+int decodeHex(char* path, const datSeq_t* data)
 {
   int hfd = open(path, O_RDONLY);
   
@@ -268,11 +271,8 @@ int decodeHex(char* path, unsigned char* data)
       return FALSE;
     }
 
-  datSeq_t hexseq[64];
 
-  long count =  parseHexFile(hfd, &hexseq[0]);
-  seqToByteArray(&hexseq[0], (uint8_t*) data, 0, 1024);
-  cleanUpSeq(&hexseq[0]);
+  long count = parseHexFile(hfd, data);
 
   if (count < 0)
     {
@@ -304,40 +304,37 @@ int isPageEmpty(unsigned char* dat, unsigned char pgno)
   return TRUE;
 }
 
-void writeHex(unsigned char* hexdat)
+void writeHex(datSeq_t* hexdat)
 {
 
-	/*
-  unsigned char pgno = 0;
-  unsigned int skipcnt;
-  unsigned char pgDat[32];
-  int i;
-  while (pgno < 32)
-    {
-      skipcnt = 0;
-      while (isPageEmpty(hexdat, pgno + skipcnt) && pgno + skipcnt < 32)
-	skipcnt++;
-      pgno += skipcnt;
+	uint32_t base;
+	uint8_t chunk[32];
+	int i = 0;
 
-      if (skipcnt != 0)
+
+	base = hexdat[i].baseAdr;
+	while (hexdat[i].length > 0 && hexdat[i].baseAdr + hexdat[i].length <= 0x8000)
 	{
-	  printf("Skipped %u empty pages.\n", skipcnt);
-	  if (pgno > 31) break;
-	}
-      printf("Attempting to write page %u.\n", pgno);
-      memcpy(&pgDat[0], &hexdat[pgno * 32], 32);
-      
-      if(!tinyWritePage(pgno, &pgDat[0]))
-	{
-	  printf("Writing failed. Aborting.\n");
-	  return;
+		for ( j = 0; j < 32; j++) chunk[j] = 0xFF;
+		seqToByteArray(hexdat, &chunk[0], base, 32);
+		picWriteChunk(&chunk, base);
+
+		base += 32;
+
+		if (base >= hexdat[i].baseAdr + hexdat[i].length )
+		{
+			i++;
+			base = hexdat[i].baseAdr;
+		}
+
 	}
 
+}
 
-      pgno++;
-      usleep(150 * 1000);
-    }
-  printf("Hexfile successfully written.\n"); */
+
+
+
+
 
 }
 

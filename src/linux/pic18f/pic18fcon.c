@@ -120,6 +120,13 @@ int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
 	buf[4] = (adr & 0x000000FF);
 	buf[5] = 'W';
 
+	printf("0x%08x: ", adr);
+	int i;
+	for (i = 0; i < 32; i++)
+		printf("%02X", *chunk[i]);
+	printf("\n");
+
+	/*
 	serWrite(&buf[0], 6);
 
 	if (!serRead(&buf[0], 3, TRUE))
@@ -141,6 +148,8 @@ int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
 		printf("Invalid response '%c%c'.\n", buf[0], buf[1]);
 		return FALSE;
 	}
+
+	*/
 
 	return TRUE;
 }
