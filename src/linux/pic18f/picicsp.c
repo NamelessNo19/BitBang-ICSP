@@ -95,7 +95,7 @@ int main (int argc, char **argv)
 	if (conf.ident) 
 		picIdent();
 	else if (conf.dump)
-		picDumpBlock(conf.blockNo);
+		dump(conf.hexfile, conf.blockNo);
 	else if (conf.write)
 	  ;//	tinyWritePage(conf.pageNo, &tDat[0]);
 	else if (conf.erase)
@@ -250,6 +250,12 @@ int verifyConf(conf_t *conf)
 		return FALSE;
 	}
 
+	if (conf->dump && !conf->hashex)
+	{
+		printf("You need to specify an output directory for dumping.\n");
+		return FALSE;
+	}
+
 	
 	return TRUE;
 }
@@ -339,5 +345,40 @@ void writeHex(unsigned char* hexdat)
       usleep(150 * 1000);
     }
   printf("Hexfile successfully written.\n");
+
+}
+
+void dump(const char* path, unsigned char blockNo)
+{
+	const size_t blockSize = 8192;
+
+	FILE* outf = fopen(path, "wb+");
+
+	if(outf == 0)
+	{
+		printf("Cannot open \"%s\" for writing.", path);
+		return;
+	}
+
+	unsigned char* dat = malloc(blockSize);
+
+	if (!picDumpBlock(dat, blockNo))
+	{
+		printf("Dumping failed.\n");
+		free(dat);
+		return;
+	}
+
+	printf("Writing to file... ");
+
+	if (fwrite(dat, 1, blockSize, outf) != blockSize)
+		printf("Done.\n");
+	else
+		printf("Failed.\n");
+
+	free(dat);
+
+}
+
 
 }
