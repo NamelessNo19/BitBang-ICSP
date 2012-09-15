@@ -105,5 +105,45 @@ int picDumpBlock(unsigned char* blkData, unsigned char blockNo)
 	return TRUE;
 }
 
+int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
+{
+	uint8_t i;
+	uint8_t buf[32];
+
+
+	// Sending Address
+
+	buf[0] = 'C';
+	buf[1] = (adr & 0xFF000000) >> 24;
+	buf[2] = (adr & 0x00FF0000) >> 16;
+	buf[3] = (adr & 0x0000FF00) >> 8;
+	buf[4] = (adr & 0x000000FF);
+	buf[5] = 'W';
+
+	serWrite(&buf[0], 6);
+
+	if (!serRead(&buf[0], 3, TRUE))
+		return FALSE;
+	else if (buf[0] != 'C' || buf[1] != 'W')
+	{
+		printf("Invalid response '%c%c'.\n", buf[0], buf[1]);
+		return FALSE;
+	}
+
+
+	// Write data
+	serWrite(&chunk[0], 32);
+
+	if (!serRead(&buf[0], 3, TRUE))
+		return FALSE;
+	else if (buf[0] != 'A' || buf[1] != 'C')
+	{
+		printf("Invalid response '%c%c'.\n", buf[0], buf[1]);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 
 
