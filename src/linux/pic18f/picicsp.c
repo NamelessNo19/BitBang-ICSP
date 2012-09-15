@@ -46,14 +46,14 @@ int main (int argc, char **argv)
 		return 2;
 
 	unsigned char hexdat[1024] = {[0 ... 1023] = 0xFF};
-	if (conf.hashex)
+	if (conf.hashex && conf.write)
 	  if (!decodeHex(conf.hexfile, &hexdat[0]))
 	    {
 	      printf("Aborted.\n");
 	      return 0;
 	    }
 	
-	if (conf.erase || conf.hashex)
+	if (conf.erase || conf.write)
 		{
 			printf("Are you sure you want to delete the chip's memory? (Y/N): ");
 			char in;
@@ -232,11 +232,6 @@ int verifyConf(conf_t *conf)
 			return FALSE;
 	}
 
-	if (conf->dump && conf->hashex)
-	{
-		printf("Incompatible arguments '-d' and '-h'.\n");
-		return FALSE;
-	}
 	if (conf->ident && conf->hashex)
 	{
 		printf("Incompatible arguments '-i' and '-h'.\n");
@@ -374,7 +369,7 @@ void dump(const char* path, unsigned char blockNo)
 
 	printf("Writing to file... ");
 
-	if (fwrite(dat, 1, blockSize, outf) != blockSize)
+	if (fwrite(dat, 1, blockSize, outf) == blockSize)
 		printf("Done.\n");
 	else
 		printf("Failed.\n");
