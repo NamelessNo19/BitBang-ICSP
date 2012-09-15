@@ -102,9 +102,9 @@ int main (int argc, char **argv)
 	else if (conf.write)
 	  ;//	tinyWritePage(conf.pageNo, &tDat[0]);
 	else if (conf.erase)
-		tinyChipErase();
+	;//	tinyChipErase();
 	else if (conf.hashex) 
-	    if (!tinyChipErase())
+	   // if (!tinyChipErase())
 	      printf("Chip erase failed. Aborting.\n");
 	    else
 	      writeHex(&hexdat[0]);
@@ -306,6 +306,8 @@ int isPageEmpty(unsigned char* dat, unsigned char pgno)
 
 void writeHex(unsigned char* hexdat)
 {
+
+	/*
   unsigned char pgno = 0;
   unsigned int skipcnt;
   unsigned char pgDat[32];
@@ -325,13 +327,6 @@ void writeHex(unsigned char* hexdat)
       printf("Attempting to write page %u.\n", pgno);
       memcpy(&pgDat[0], &hexdat[pgno * 32], 32);
       
-      /*     for (i = 0; i < 32; i++)
-	{
-	  printf("%#04x\t", pgDat[i+32*pgno]);
-	  if (i % 8 == 7)
-	  printf("\n"); 
-	  } */
-
       if(!tinyWritePage(pgno, &pgDat[0]))
 	{
 	  printf("Writing failed. Aborting.\n");
@@ -342,7 +337,7 @@ void writeHex(unsigned char* hexdat)
       pgno++;
       usleep(150 * 1000);
     }
-  printf("Hexfile successfully written.\n");
+  printf("Hexfile successfully written.\n"); */
 
 }
 
