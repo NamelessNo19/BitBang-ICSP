@@ -132,7 +132,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	conf->hexfile = NULL;
 	conf->blockNo = 0;
 	 
-	 while ((ai = getopt (argc, argv, "ip:d:w:eh:")) != -1)
+	 while ((ai = getopt (argc, argv, "ip:d:w:eh:c")) != -1)
          switch (ai)
            {
            case 'i':

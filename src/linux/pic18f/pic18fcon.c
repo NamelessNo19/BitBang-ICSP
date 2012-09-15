@@ -4,11 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char* CONF_REG_STR[] = {"CONFIG1L", "CONFIG1H", "CONFIG2L", "CONFIG2H", "CONFIG3H", "CONFIG4L",
+							  "CONFIG5L", "CONFIG5H", "CONFIG6L", "CONFIG6H", "CONFIG7L", "CONFIG7H"};
+};
+
 int picIdent()
 {
 	printf("Sending identification request.\n");
 	serWrite("ID", 2);
-	unsigned char buf[3];
+	unsigned char buf[13];
 	buf[0] = '\0'; buf[1] = '\0'; buf[2] = '\0';
 	
 	if (!serRead(&buf[0], 3, TRUE)) 
@@ -28,7 +32,6 @@ int picIdent()
 
 	char* mod;
 	uint16_t mdID = (buf[0] << 8 | buf[1]) & 0xFFE0;
-	char ukn = FALSE;
 
 	switch(mdID)
 	  {
@@ -36,22 +39,23 @@ int picIdent()
 	    mod = "PIC18F4550";
 	    break;
 	  default:
-	    ukn = TRUE;
+		mod = "Unknown";
 	    break;
 	  }
 	
-	printf("\n");
-	printf("------------------------------\n");
-	printf("Model:\t\t");
+	unsigned char rev = buf[1] & 0x7F;
 
-	if (ukn)
-	  printf("Unknown (0x%04x)\n", mdID);
-	else
-	  printf("%s\n", mod);
+	// Reading configuration
+	if (!serRead(&buf[0], 13, TRUE))
+				return FALSE;
 
-	printf("Revision:\t%d\n",  buf[1] & 0x7F );
-	printf("------------------------------\n");
-	printf("\n");
+	printf("\n----- Model: %s - Revision: %d ----", mod, rev);
+
+	int i;
+
+	for (i = 0; i < 12; i++)
+		printf("%s:\t0x%02X\n", CONF_REG_STR[i], buf[i]);
+
 
 	return TRUE;
 }
@@ -107,6 +111,8 @@ int picDumpBlock(unsigned char* blkData, unsigned char blockNo)
 	printf("\n");
 	return TRUE;
 }
+
+
 
 int tinyWritePage(unsigned char pageNo, unsigned char* data)
 {

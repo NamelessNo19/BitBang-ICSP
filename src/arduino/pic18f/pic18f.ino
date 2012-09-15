@@ -142,6 +142,16 @@ void ident()
   Serial.write(id & 0xFF);
   Serial.write(0xAB); 
   Serial.flush();  
+
+  const uint8_t memlocs[] = {0, 1, 2, 3, 5, 6, 8, 9, 10, 11, 12, 13};
+
+  uint8_t i;
+  for (i = 0; i < 12; i++)
+  {
+	  setTablePtr(0x300000L + memlocs[i]);
+	  Serial.write(readByte());
+  }
+
 }
 
 void rdBlock(const uint8_t blockNo)
