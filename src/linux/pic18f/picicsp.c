@@ -24,8 +24,8 @@ typedef struct conf_s
 
 int parseArgs(int argc, char **argv, conf_t *conf);
 int verifyConf(conf_t *conf);
-int decodeHex(char* path, unsigned char* data);
-void writeHex(unsigned char* hexdat);
+int decodeHex(const char* path,  datSeq_t* data);
+void writeHex(datSeq_t* hexdat);
 void dump(const char* path, unsigned char blockNo);
 
 
@@ -133,7 +133,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	conf->hexfile = NULL;
 	conf->blockNo = 0;
 	 
-	 while ((ai = getopt (argc, argv, "ip:d:w:eh:c")) != -1)
+	 while ((ai = getopt (argc, argv, "ip:d:eh:w")) != -1)
          switch (ai)
            {
            case 'i':
@@ -151,7 +151,6 @@ int parseArgs(int argc, char **argv, conf_t *conf)
              break;
 	   case 'w':
 	     conf->write = TRUE;
-	     conf->blockNo = atoi(optarg);
              break;
 	   case 'h':
 	     conf->hashex = TRUE;
@@ -261,7 +260,7 @@ int verifyConf(conf_t *conf)
 	return TRUE;
 }
 
-int decodeHex(char* path, const datSeq_t* data)
+int decodeHex(const char* path, datSeq_t* data)
 {
   int hfd = open(path, O_RDONLY);
   
@@ -304,39 +303,34 @@ int isPageEmpty(unsigned char* dat, unsigned char pgno)
   return TRUE;
 }
 
-void writeHex(datSeq_t* hexdat)
+void writeHex( datSeq_t* hexdat)
 {
 
 	uint32_t base;
 	uint8_t chunk[32];
 	int i = 0;
+	int j;
 
 
 	base = hexdat[i].baseAdr;
-	while (hexdat[i].length > 0 && hexdat[i].baseAdr + hexdat[i].length <= 0x8000)
+	while (hexdat[i].length > 0 && base <= 0x8000)
 	{
 		for ( j = 0; j < 32; j++) chunk[j] = 0xFF;
 		seqToByteArray(hexdat, &chunk[0], base, 32);
 		picWriteChunk(&chunk, base);
 
 		base += 32;
-
-		if (base >= hexdat[i].baseAdr + hexdat[i].length )
-		{
-			i++;
-			base = hexdat[i].baseAdr;
-		}
+     
+	       	while (base > hexdat[i].baseAdr + hexdat[i].length  && hexdat[i].length > 0)
+		  {
+		    i++;
+		    base = hexdat[i].baseAdr < base ? base : hexdat[i].baseAdr;
+		  }
 
 	}
 
 }
 
-
-
-
-
-
-}
 
 void dump(const char* path, unsigned char blockNo)
 {

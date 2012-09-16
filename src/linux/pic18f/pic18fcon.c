@@ -76,10 +76,27 @@ int picDumpBlock(unsigned char* blkData, unsigned char blockNo)
 	unsigned char buf[33];
 	printf("Sending block %d read request.\n", blockNo);
 	
-	if (!echo('R', 'B'))
-			return FALSE;
+	serWrite("RB", 2);
+	serWrite(&blockNo, 1);
+	buf[0] = '\0'; buf[1] = '\0';
 	
-
+	if (!serRead(&buf[0], 3, TRUE)) 
+		return FALSE; 
+	else if (buf[0] == 'I' && buf[1] == 'A')
+	{
+		printf("Invalid block.\n");
+		return FALSE;
+	}
+	else if (buf[0] == 'S' && buf[1] == 'F')
+	{
+		printf("Synchronization failed.\n");
+		return FALSE;
+	}
+	else if (buf[0] != 'R' || buf[1] != 'B')
+	{
+		printf("Invalid response '%c%c'.\n", buf[0], buf[1]);
+		return FALSE;
+	}
 	printf("Receiving block data...");
 
 
@@ -121,9 +138,9 @@ int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
 	buf[5] = 'W';
 
 	printf("0x%08x: ", adr);
-	int i;
+
 	for (i = 0; i < 32; i++)
-		printf("%02X", *chunk[i]);
+	  printf("%02X", (*chunk)[i]);
 	printf("\n");
 
 	/*
