@@ -141,8 +141,10 @@ void clkFlashWrite()
   
   clkHI;
   delayMicroseconds(DELAY_P9);
+  del;
   clkLO;
   delayMicroseconds(DELAY_P10);
+  del;
   
   // 16 Clocks
   for (i = 0; i < 16; i++)

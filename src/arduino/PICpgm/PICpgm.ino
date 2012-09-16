@@ -314,21 +314,11 @@ void loop()
  
  enterPM();
  del;
- uint16_t id = 0xB00B;
-
  
-  id = readWord(0x002ACA);
-  
-  if(cntr == 1)
-    writeTest();
- 
+ bulkErase(BLKER_BB);
+ bulkErase(BLKER_CEP_B0);
  
  exitPM();
-  Serial.begin(9600);
- Serial.print(id, HEX);
- Serial.write('\n');
- Serial.end();
- cntr++;
  
  tone(pinSpeaker, 880);
  delay(200);

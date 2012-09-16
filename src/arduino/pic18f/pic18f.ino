@@ -11,11 +11,11 @@
 #define pinSpeaker 6
 
 int ledpwr;
-char inbuf[2];
+char inbuf[6];
 int err;
 
-uint16_t datBuf[16];
-
+char datBuf[32];
+uint8_t tdat;
 
 void setup()
 {
@@ -81,13 +81,11 @@ void loop()
     Serial.readBytes(&inbuf[0], 1);
     rdBlock(inbuf[0]);
   }
- /*
-  else if (inbuf[0] == 'W' && inbuf[1] == 'P')
+  else if (inbuf[0] == 'W' && inbuf[1] == 'R')
   {
-    while (Serial.available() == 0) delay(100);
-    Serial.readBytes(&inbuf[0], 1);
-    wrPage(inbuf[0]);
+    picwrite();
   }
+  /*
   else if (inbuf[0] == 'E' && inbuf[1] == 'R')
   {
     if (initTarget())
@@ -203,63 +201,91 @@ void rdBlock(const uint8_t blockNo)
     pwrOffTarget();
 }
 
-/*
-void wrPage(uint8_t pgNo)
+
+void picwrite()
 {
-  digitalWrite(13, HIGH);
-  while (Serial.available() < 32) delay(100);
+// if (!initTarget()) return;
   
-  uint16_t crc = 0xffff;
+// setAccessToFlash();
   
-  char inbuf[2];
+  Serial.print("WR");
+  inbuf[0] = 0;
   int i;
-  for (i = 0; i < 16; i++)
+
+  uint32_t base;
+  while (1)
   {
-    Serial.readBytes(&inbuf[0], 2);     
-    datBuf[i] =  (inbuf[1] & 0xFF);
-    datBuf[i] |= (inbuf[0] & 0xFF) << 8;
-    crc = _crc16_update(crc, (uint8_t) inbuf[0]);
-    crc = _crc16_update(crc, (uint8_t) inbuf[1]);
-  }
-  
-  Serial.write('W');
-  Serial.write((char) ((crc & 0xFF00) >> 8));
-  Serial.write((char)(crc & 0x00FF));
-  Serial.write('P');
-  Serial.flush();
-  
-  while (Serial.available() < 2) delay(100);
-  Serial.readBytes(&inbuf[0], 2);
-  if (inbuf[0] != 'A' || inbuf[1] != 'C')
-    return;
+    if (Serial.readBytes(&inbuf[0], 6) != 6)
+    {
+      Serial.print("TC");
+      break;
+      return;
+     }
+     
+     if (inbuf[0] != 'C' || inbuf[5] != 'W')
+     {
+       if (inbuf[0] != 'S' || inbuf[5] != 'T');
+         Serial.print("IC");
+       break;
+     }
+     
+     base = inbuf[4];
+     base |= inbuf[3] << 8;
+     base |= inbuf[2] << 16;
+     base |= inbuf[1] << 24;
+     
+     if (base > 0x7FFF)
+     {
+       Serial.print("IA");
+       break;
+     }
+     Serial.print("CW");
+     
+    // setTablePtr(base);
+     
+    // Read Data
+    if (Serial.readBytes(&datBuf[0], 32) != 32)
+    {
+      Serial.print("TC");
+      break;
+      return;
+    }
     
-  if (!initTarget())
-    return;  
+   for (i = 0; i < 15; i++)
+    {
+     tdat = 0;
+     tdat += datBuf[2 * i + 1] * 256;
+     tdat += datBuf[2 * i];
   
-  
- for (i = 0; i < 16; i++) 
-    loadFlashWord(i, datBuf[i]);
- 
- uint16_t wadr = pgNo  << 4;
- writeFlashPageNear(wadr);
+     // dat = 0x83 | (0x6A << 8);//
+      //cmdOut(CMD_OUT_TBWR_POSI2, dat);
+      
+      if (datBuf[2 * i] == 0x83 && datBuf[2 * i + 1] == 0x6A)
+        tone(pinSpeaker, 1440);
+      else
+        tone(pinSpeaker, 1440);
+       delay(200);
+       noTone(pinSpeaker);
+       delay(200);
+       
+       if (tdat == 0x6A83)
+        tone(pinSpeaker, 1440);
+      else
+        tone(pinSpeaker, 440);
+       delay(200);
+       noTone(pinSpeaker);
+       delay(200);
+       
+       return; 
 
- // Read back
- uint16_t crcRB = 0xffff;
- uint16_t word;
- for (i = 0; i < 16; i++)
- {
-	 word = readFlashWord(wadr + i);
-     crcRB = _crc16_update(crcRB, (word & 0xFF00) >> 8);
-     crcRB = _crc16_update(crcRB, word & 0x00FF);
+    }
+    
+    dat = datBuf[30] | (datBuf[31] << 8);
+    cmdOut(CMD_OUT_TBWR_SP, dat);
+    clkFlashWrite(); 
+    Serial.print("AW");
   }
-  
-  pwrOffTarget();
-
-  if (crcRB == crc)
-	  Serial.print("AC");
-  else
-	  Serial.print("CF");
-
-  return;  
-  
-} */
+ //disableWrite();
+ //pwrOffTarget();
+  Serial.print("AC");
+}

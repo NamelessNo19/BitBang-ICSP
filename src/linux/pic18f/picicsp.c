@@ -305,20 +305,32 @@ int isPageEmpty(unsigned char* dat, unsigned char pgno)
 
 void writeHex( datSeq_t* hexdat)
 {
-
+  printf("Enabling write access...\n");
 	uint32_t base;
 	uint8_t chunk[32];
 	int i = 0;
 	int j;
 
+	if (!echo('W', 'R')) return;
+
+	int cwrt = 0;
 
 	base = hexdat[i].baseAdr;
 	while (hexdat[i].length > 0 && base <= 0x8000)
 	{
-		for ( j = 0; j < 32; j++) chunk[j] = 0xFF;
+	  for ( j = 0; j < 32; j++) chunk[j] = 0xFF;
+		printf("\rWriting Chunk %d...", cwrt);
 		seqToByteArray(hexdat, &chunk[0], base, 32);
-		picWriteChunk(&chunk, base);
-
+	
+		if (!picWriteChunk(&chunk, base))
+		 {
+		  printf("\nChunk write failed.\n");
+		  break;
+		 }
+		//	for( j = 0; j < 32; j++) printf("%02x ", chunk[j]);
+		//	printf("\n");
+		
+		cwrt++;
 		base += 32;
      
 	       	while (base > hexdat[i].baseAdr + hexdat[i].length  && hexdat[i].length > 0)
@@ -328,6 +340,9 @@ void writeHex( datSeq_t* hexdat)
 		  }
 
 	}
+	printf("\nSending write stop.\n");
+
+	serWrite("STOPWT", 6);
 
 }
 
