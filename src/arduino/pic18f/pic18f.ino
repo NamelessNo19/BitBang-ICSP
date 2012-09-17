@@ -14,8 +14,8 @@ int ledpwr;
 char inbuf[6];
 int err;
 
-char datBuf[32];
-uint8_t tdat;
+uint8_t datBuf[32];
+
 
 void setup()
 {
@@ -204,15 +204,17 @@ void rdBlock(const uint8_t blockNo)
 
 void picwrite()
 {
-// if (!initTarget()) return;
+ if (!initTarget()) return;
   
-// setAccessToFlash();
+ setAccessToFlash();
   
   Serial.print("WR");
   inbuf[0] = 0;
   int i;
 
   uint32_t base;
+  uint16_t tdat;
+  
   while (1)
   {
     if (Serial.readBytes(&inbuf[0], 6) != 6)
@@ -241,10 +243,10 @@ void picwrite()
      }
      Serial.print("CW");
      
-    // setTablePtr(base);
+    setTablePtr(base);
      
     // Read Data
-    if (Serial.readBytes(&datBuf[0], 32) != 32)
+    if (Serial.readBytes((char*) &datBuf[0], 32) != 32)
     {
       Serial.print("TC");
       break;
@@ -253,39 +255,18 @@ void picwrite()
     
    for (i = 0; i < 15; i++)
     {
-     tdat = 0;
-     tdat += datBuf[2 * i + 1] * 256;
-     tdat += datBuf[2 * i];
-  
-     // dat = 0x83 | (0x6A << 8);//
-      //cmdOut(CMD_OUT_TBWR_POSI2, dat);
-      
-      if (datBuf[2 * i] == 0x83 && datBuf[2 * i + 1] == 0x6A)
-        tone(pinSpeaker, 1440);
-      else
-        tone(pinSpeaker, 1440);
-       delay(200);
-       noTone(pinSpeaker);
-       delay(200);
-       
-       if (tdat == 0x6A83)
-        tone(pinSpeaker, 1440);
-      else
-        tone(pinSpeaker, 440);
-       delay(200);
-       noTone(pinSpeaker);
-       delay(200);
-       
-       return; 
-
+     tdat = datBuf[2 * i + 1] << 8;
+     tdat |= datBuf[2 * i];
+     cmdOut(CMD_OUT_TBWR_POSI2, tdat);
     }
     
-    dat = datBuf[30] | (datBuf[31] << 8);
-    cmdOut(CMD_OUT_TBWR_SP, dat);
+    tdat = datBuf[31] << 8;
+     tdat |= datBuf[30];
+    cmdOut(CMD_OUT_TBWR_SP_POSI2, tdat);
     clkFlashWrite(); 
     Serial.print("AW");
   }
- //disableWrite();
- //pwrOffTarget();
+ disableWrite();
+ pwrOffTarget();
   Serial.print("AC");
 }
