@@ -152,6 +152,9 @@ int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
 	// Write data
 	serWrite(&(*chunk)[0], 32);
 
+	//	serRead(&buf[0], 5, TRUE);
+	//	printf("\n- %s -\n", &buf[0]);
+
 	if (!serRead(&buf[0], 3, TRUE))
 		return FALSE;
 	else if (buf[0] != 'A' || buf[1] != 'W')
