@@ -122,10 +122,10 @@ int picDumpBlock(unsigned char* blkData, unsigned char blockNo)
 	return TRUE;
 }
 
-int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
+int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 {
 	uint8_t i;
-	uint8_t buf[32];
+	uint8_t buf[WR_CHNK_SIZE];
 
 
 	// Sending Address
@@ -150,10 +150,10 @@ int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
 
 
 	// Write data
-	serWrite(&(*chunk)[0], 32);
+	serWrite(&(*chunk)[0], WR_CHNK_SIZE);
 
-	//	serRead(&buf[0], 5, TRUE);
-	//	printf("\n- %s -\n", &buf[0]);
+		serRead(&buf[0], WR_CHNK_SIZE, TRUE);
+		printf("\n- %s -\n", &buf[0]);
 
 	if (!serRead(&buf[0], 3, TRUE))
 		return FALSE;
@@ -166,5 +166,41 @@ int picWriteChunk(uint8_t (*chunk)[32], const uint32_t adr)
 	return TRUE;
 }
 
+int picBulkErase(uint8_t blockNo)
+{
+  if (blockNo >= 4 && blockNo != 0x0B)
+    {
+      printf("Unexpected block %d!\n", blockNo);
+      return FALSE;
+    }
+ 
+  if (!echo('E', 'R')) return FALSE;
 
+  serWrite(&blockNo, 1);
+  unsigned char buf[3];
+  
+  if (!serRead(&buf[0], 3, TRUE))
+	return FALSE;
+  else if (buf[0] == 'I' || buf[1] == 'A')
+  {
+	printf("Block rejected by programmer.\n");
+	return FALSE;
+  }
+  else if (buf[0] == 'S' || buf[1] == 'F')
+  {
+	printf("Synchronization failed.\n");
+	return FALSE;
+  }
+  else if (buf[0] == 'E' || buf[1] == 'C')
+  {
+	printf("Erase completed.\n");
+	return TRUE;
+  }
+  else
+   {
+     printf("Invalid response '%c%c'.\n", buf[0], buf[1]);
+     return FALSE;
+   }
+
+}
 

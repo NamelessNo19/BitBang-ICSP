@@ -2,7 +2,7 @@
 #define clkLO digitalWrite(pinPGC, LOW);
 #define datIN pinMode(pinPGD, INPUT)
 #define datOUT pinMode(pinPGD, OUTPUT);
-#define del delayMicroseconds(100)
+#define del delayMicroseconds(10)
 
 #define DEVID 0x1200
 

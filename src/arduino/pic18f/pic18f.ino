@@ -6,15 +6,17 @@
 #define pinPGC 5
 #define pinPGM 3
 
-#define pinStart 9
+//#define pinStart 9
 #define pinVSense 12
 #define pinSpeaker 6
+
+#define WR_CHNK_SIZE 30
 
 int ledpwr;
 char inbuf[6];
 int err;
 
-uint8_t datBuf[33];
+uint8_t datBuf[WR_CHNK_SIZE];
 
 
 void setup()
@@ -23,7 +25,7 @@ void setup()
   pinMode(pinPGD, INPUT);
   pinMode(pinPGC, OUTPUT);
   pinMode(pinPGM, OUTPUT);
-  pinMode(pinStart, INPUT);
+  //pinMode(pinStart, INPUT);
   pinMode(pinVSense, INPUT);
   pinMode(pinSpeaker, OUTPUT);
   pinMode(13, OUTPUT);
@@ -32,7 +34,7 @@ void setup()
   digitalWrite(pinPGD, LOW);
   digitalWrite(pinPGM, LOW);
   digitalWrite(pinPGC, LOW);
-  digitalWrite(pinStart, LOW);
+  //digitalWrite(pinStart, LOW);
   digitalWrite(pinVSense, LOW);
   digitalWrite(pinSpeaker, LOW);
 
@@ -76,7 +78,6 @@ void loop()
   }
   else if (inbuf[0] == 'R' && inbuf[1] == 'B')
   {
-
     while (Serial.available() == 0) delay(100);
     Serial.readBytes(&inbuf[0], 1);
     rdBlock(inbuf[0]);
@@ -85,19 +86,16 @@ void loop()
   {
     picwrite();
   }
-  /*
   else if (inbuf[0] == 'E' && inbuf[1] == 'R')
-   {
-   if (initTarget())
-   {
-   chipErase();
-   pwrOffTarget();
-   Serial.print("ER");
-   }
-   else
-   pwrOffTarget();
-   }
-   */
+  { 
+    erBlock();
+  }
+  else
+  {
+    tone(pinSpeaker, 330);
+    delay(250);
+  }
+
 
   tone(pinSpeaker, 1188);
   delay(150);
@@ -141,7 +139,7 @@ void ident()
   Serial.flush();  
 
   const uint8_t memlocs[] = {
-    0, 1, 2, 3, 5, 6, 8, 9, 10, 11, 12, 13  };
+    0, 1, 2, 3, 5, 6, 8, 9, 10, 11, 12, 13        };
 
   uint8_t i;
   for (i = 0; i < 12; i++)
@@ -207,6 +205,7 @@ void picwrite()
 {
   if (!initTarget()) return;
 
+  enableWrite();
   setAccessToFlash();
 
   Serial.print("WR");
@@ -247,24 +246,29 @@ void picwrite()
     setTablePtr(base);
 
     // Read Data
-    if (Serial.readBytes((char*) &datBuf[0], 32) != 32)
+    if (Serial.readBytes((char*) &datBuf[0], WR_CHNK_SIZE) != WR_CHNK_SIZE)
     {
       Serial.print("TC");
       break;
       return;
     }
 
-    for (i = 0; i < 15; i++)
+    for (i = 0; i < (WR_CHNK_SIZE / 2) - 1; i++)
     {
       tdat = (uint16_t) datBuf[2 * i + 1] <<  8;
       tdat |= datBuf[2 * i];
       cmdOut(CMD_OUT_TBWR_POSI2, tdat);
+      Serial.print(tdat, HEX);
+      Serial.write(':');
     }
 
-    tdat = (uint16_t) datBuf[31] << 8;
-    tdat |= datBuf[30];
-     cmdOut(CMD_OUT_TBWR_SP_POSI2, tdat);
-     clkFlashWrite(); 
+
+    tdat = datBuf[WR_CHNK_SIZE - 1];
+    tdat <<= 8;
+    tdat |= datBuf[WR_CHNK_SIZE - 2];
+
+    cmdOut(CMD_OUT_TBWR_SP_POSI2, tdat);
+    clkFlashWrite(); 
 
     //Serial.print(tdat, HEX);   
     Serial.print("AW");
@@ -273,4 +277,53 @@ void picwrite()
   pwrOffTarget();
   Serial.print("AC");
 }
+
+void erBlock()
+{
+
+  uint16_t eropt;
+  Serial.print("ER");
+
+  int res = Serial.readBytes(&inbuf[0], 1);
+  
+  if (res != 1)
+  {
+    Serial.print("TC");
+    return;
+  }
+  
+  switch(inbuf[0])
+  {
+  case 0: 
+    eropt = BLKER_CEP_B0; 
+    break;
+  case 1: 
+    eropt = BLKER_CEP_B1; 
+    break;
+  case 2: 
+    eropt = BLKER_CEP_B2; 
+    break;
+  case 3: 
+    eropt = BLKER_CEP_B3; 
+    break;
+    //case 4: eropt = BLKER_CEP_B4; break;
+    //case 5: eropt = BLKER_CEP_B5; break;
+  case 0x0B: 
+    eropt = BLKER_BB;  
+    break;
+  default:
+    Serial.print("IA");
+    return;
+  }
+
+  if (!initTarget()) return;
+  bulkErase(eropt);
+  pwrOffTarget();
+  
+
+  Serial.print("EC");
+}
+
+
+
 

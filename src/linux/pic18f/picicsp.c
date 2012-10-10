@@ -55,7 +55,10 @@ int main (int argc, char **argv)
 	
 	if (conf.erase)
 		{
-			printf("Are you sure you want to delete the chip's memory? (Y/N): ");
+		  if (conf.blockNo != 66)
+		    printf("Are you sure you want to erase block %d? (Y/N): ", (unsigned int)conf.blockNo);
+		  else
+		    printf("Are you sure you want to erase the boot block? (Y/N): ");
 			char in;
 			scanf("%c", &in);
 			if (in != 'y' && in != 'Y')
@@ -107,7 +110,12 @@ int main (int argc, char **argv)
 	else if (conf.write)
 	  writeHex(hexdt);
 	else if (conf.erase)
-	;//	tinyChipErase();
+	  {
+	    if (conf.blockNo < 4 || conf.blockNo == 'B')  
+	      picBulkErase(conf.blockNo == 'B' ? 0x0b : conf.blockNo);
+	    else
+	      printf("Invalid block.\n");
+	  }
 		
 		
 		
@@ -133,7 +141,7 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	conf->hexfile = NULL;
 	conf->blockNo = 0;
 	 
-	 while ((ai = getopt (argc, argv, "ip:d:eh:w")) != -1)
+	 while ((ai = getopt (argc, argv, "ip:d:e:h:w")) != -1)
          switch (ai)
            {
            case 'i':
@@ -141,13 +149,20 @@ int parseArgs(int argc, char **argv, conf_t *conf)
              break;
            case 'e':
              conf->erase = TRUE;
+	     if (optarg[0] == 'b' || optarg[0] == 'B')
+	       conf->blockNo = 'B';
+	     else
+	      conf->blockNo = atoi(optarg);
              break;
            case 'p':
              conf->port = optarg;
              break;
            case 'd':
 	     conf->dump = TRUE;
-	     conf->blockNo = atoi(optarg);
+	     if (optarg[0] == 'b' || optarg[0] == 'B')
+	       conf->blockNo = 'B';
+	     else
+	      conf->blockNo = atoi(optarg);
              break;
 	   case 'w':
 	     conf->write = TRUE;
@@ -307,7 +322,7 @@ void writeHex( datSeq_t* hexdat)
 {
   printf("Enabling write access...\n");
 	uint32_t base;
-	uint8_t chunk[32];
+	uint8_t chunk[WR_CHNK_SIZE];
 	int i = 0;
 	int j;
 
@@ -318,9 +333,9 @@ void writeHex( datSeq_t* hexdat)
 	base = hexdat[i].baseAdr;
 	while (hexdat[i].length > 0 && base <= 0x8000)
 	{
-	  for ( j = 0; j < 32; j++) chunk[j] = 0xFF;
+	  for ( j = 0; j < WR_CHNK_SIZE; j++) chunk[j] = 0xFF;
 		printf("\rWriting Chunk %d...", cwrt);
-		seqToByteArray(hexdat, &chunk[0], base, 32);
+		seqToByteArray(hexdat, &chunk[0], base, WR_CHNK_SIZE);
 	
 		if (!picWriteChunk(&chunk, base))
 		 {
@@ -331,7 +346,7 @@ void writeHex( datSeq_t* hexdat)
 		//	printf("\n");
 		
 		cwrt++;
-		base += 32;
+		base += WR_CHNK_SIZE;
      
 	       	while (base > hexdat[i].baseAdr + hexdat[i].length  && hexdat[i].length > 0)
 		  {
