@@ -2,6 +2,7 @@
 #include "PIC18Fconst.h"
 
 #define SEVSEG
+#include "sevsegconst.h"
 
 #define pinMCLR 11
 #define pinPGD 10
@@ -83,31 +84,37 @@ void loop()
     digitalWrite(13, HIGH);
     
     #ifdef SEVSEG
-    segWrite(LED_L);
+    segWrite(SEG_o);
     #endif
     
-    delay(200);
+    delay(300);
     digitalWrite(13, LOW);
     
     #ifdef SEVSEG
-    segWrite(LED_O_dot);
+    segWrite(SEG_o_high);
     #endif
     
-    delay(200);
+    delay(300);
   }
 
   digitalWrite(13, LOW);
+  
+   #ifdef SEVSEG
+   segWrite(SEG_b);
+   #endif
 
   Serial.readBytes(&inbuf[0], 2);
 
   if (inbuf[0] == 'I' && inbuf[1] == 'D')
   {
+   
     ident();
   }
   else if (inbuf[0] == 'R' && inbuf[1] == 'B')
   {
     while (Serial.available() == 0) delay(100);
     Serial.readBytes(&inbuf[0], 1);
+    segWrite(segNum(inbuf[0], false));
     rdBlock(inbuf[0]);
   }
   else if (inbuf[0] == 'W' && inbuf[1] == 'R')
