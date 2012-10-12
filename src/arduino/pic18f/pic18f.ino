@@ -1,12 +1,23 @@
 #include <util/crc16.h>
 #include "PIC18Fconst.h"
 
+#define SEVSEG
+
 #define pinMCLR 11
-#define pinPGD 7
-#define pinPGC 5
-#define pinPGM 3
+#define pinPGD 10
+#define pinPGC 9
+#define pinPGM 8
+
+
+
+#ifdef SEVSEG
+#define pin4094SI 4
+#define pin4094CK 3
+#endif
 
 //#define pinStart 9
+
+
 #define pinVSense 12
 #define pinSpeaker 6
 
@@ -29,6 +40,8 @@ void setup()
   pinMode(pinVSense, INPUT);
   pinMode(pinSpeaker, OUTPUT);
   pinMode(13, OUTPUT);
+  
+  
 
   digitalWrite(pinMCLR, LOW);
   digitalWrite(pinPGD, LOW);
@@ -37,8 +50,13 @@ void setup()
   //digitalWrite(pinStart, LOW);
   digitalWrite(pinVSense, LOW);
   digitalWrite(pinSpeaker, LOW);
-
-
+  
+  #ifdef SEVSEG
+  pinMode(pin4094SI, OUTPUT);
+  pinMode(pin4094CK, OUTPUT);
+  digitalWrite(pin4094SI, LOW);
+  digitalWrite(pin4094CK, LOW);
+  #endif
 
   err = -1;
 
@@ -63,8 +81,18 @@ void loop()
   while (Serial.available() < 2)
   {
     digitalWrite(13, HIGH);
+    
+    #ifdef SEVSEG
+    segWrite(LED_L);
+    #endif
+    
     delay(200);
     digitalWrite(13, LOW);
+    
+    #ifdef SEVSEG
+    segWrite(LED_O_dot);
+    #endif
+    
     delay(200);
   }
 
