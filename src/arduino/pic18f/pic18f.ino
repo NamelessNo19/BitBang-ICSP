@@ -243,21 +243,45 @@ void picwrite()
 {
   if (!initTarget()) return;
    Serial.print("WR");
-   if (!receiveChunk())
+   
+   setAccessToFlash(); 
+   boolean cont = true;
+   
+   while(cont)
    {
-     pwrOffTarget();
-     segWrite(SEG_F);
-     delay(1000);
-     return;
-   }
+    
+    // New Chunk or stop 
+    if (Serial.readBytes(&inbuf[0], 2) != 2)
+    {
+      Serial.print("TC");
+      break;
+    }
+    
+     if (inbuf[0] != 'N' || inbuf[1] != 'C')
+     {
+       cont = false;
+     }
+     else
+     {
+       Serial.print("NC");
+       if (!receiveChunk())
+       {
+         // Receive Failed
+         pwrOffTarget();
+         segWrite(SEG_F);
+         delay(1000);
+         return;
+       }
+     
+       // Write
+       setTablePtr(chnkAdr);
+       writeChunkToFlash();  
+     }
+   } // while(cont)
    
-  
-  setAccessToFlash(); 
-  
-  
-  setTablePtr(chnkAdr);
-  writeChunkToFlash();  
    
+   // Confirm
+   Serial.print("WS");
    segWrite(SEG_d);
    delay(1000);
    
@@ -335,8 +359,8 @@ boolean receiveChunk()
   
   if (chnkAdr > 0x007FFF)
   {
-    Serial.print("IA"); // Invalid address
-    return false;
+    Serial.print("AH"); // Invalid address
+    return true;
   }
   
   // CRC16 address

@@ -130,6 +130,12 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 	uint16_t cCRC = 0xFFFF;
 	uint16_t rCRC = 0;
 
+	if (adr > 0x007FFF)
+	  {
+	    printf("Invalid base address 0x%06x. Skipped.\n", adr);
+	    return TRUE;
+	  }
+
 	// Sending Address
 
 	buf[0] = 'C';
@@ -139,7 +145,7 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 	buf[4] = (adr & 0x000000FF);
 	buf[5] = 'W';
 	
-	printf("Sending address...\n");
+	//printf("Sending address...\n");
 	serWrite(&buf[0], 6);
 
 	// Calculate checksum
@@ -147,31 +153,37 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 	cCRC =  crc16_update(cCRC, buf[2]);
 	cCRC =  crc16_update(cCRC, buf[3]);
 	cCRC =  crc16_update(cCRC, buf[4]);
-	printf("#\n");
 	for (i = 0; i < WR_CHNK_SIZE; i++)
 	  {
 	  cCRC = crc16_update(cCRC, (*chunk)[i]);
-	  printf("%02X ", (*chunk)[i]);
+	  // printf("%02X ", (*chunk)[i]);
 	  }
-        printf("\n @0x%08X\n", adr);
+       
+	// printf("\n @0x%08X\n", adr);
 
+	
 	if (!serRead(&buf[0], 3, TRUE))
 		return FALSE;
+	else if (buf[0] == 'A' && buf[1] == 'H')
+	{
+	  printf("\nChunk base (0x%06x) rejected. Skipped.\n", adr);
+		return TRUE;
+	}
 	else if (buf[0] != 'C' || buf[1] != 'W')
 	{
-		printf("Invalid response '%c%c', expected CW.\n", buf[0], buf[1]);
+		printf("\nInvalid response '%c%c', expected CW.\n", buf[0], buf[1]);
 		return FALSE;
 	}
 
 	// Write data
-	printf("Sending data...\n");
+	//	printf("Sending data...\n");
 	serWrite(&(*chunk)[0], WR_CHNK_SIZE);
 
 	if (!serRead(&buf[0], 5, TRUE))
 		return FALSE;
 	else if (buf[0] != 'C' || buf[3] != 'S')
 	{
-		printf("Invalid response '%c%c', expected CS.\n", buf[0], buf[3]);
+		printf("\nInvalid response '%c%c', expected CS.\n", buf[0], buf[3]);
 		return FALSE;
 	}
 
@@ -179,28 +191,28 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 	rCRC = (buf[1] << 8) | buf[2];
 	if (rCRC != cCRC)
 	  {
-	    printf("Checksum missmatch! (C: 0x%x / R: 0x%x) Sending abort....\n", cCRC, rCRC);
+	    printf("\nChecksum missmatch! (C: 0x%x / R: 0x%x) Sending abort....\n", cCRC, rCRC);
 	    serWrite("CM", 2);
 
 	    if (!serRead(&buf[0], 3, TRUE))
 		return FALSE;
 	    else if (buf[0] != 'S' || buf[1] != 'T')
 	      {
-		printf("Invalid response '%c%c', expected ST.\n", buf[0], buf[1]);
+		printf("\nInvalid response '%c%c', expected ST.\n", buf[0], buf[1]);
 		return FALSE;
 	      }
 	    printf("Write aborted.\n");
 	    return FALSE;
 	  }
 
-	printf("Checksum OK. Sending confirmation...\n");
+	//	printf("Checksum OK. Sending confirmation...\n");
 	if (!echo('A','C'))
 	  {
-	    printf("Confirmation failed. \n");
+	    printf("\nConfirmation failed. \n");
 	    return FALSE;
 	  }
 
-	printf("Confirmed.\n");
+	//	printf("Confirmed.\n");
 
 	return TRUE;
 }

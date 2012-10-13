@@ -340,13 +340,15 @@ void writeHex( datSeq_t* hexdat)
 		fflush(stdout);
 		seqToByteArray(hexdat, &chunk[0], base, WR_CHNK_SIZE);
 	
+		if (!echo('N', 'C'))
+		  return;
+
 		if (!picWriteChunk(&chunk, base))
 		 {
 		  printf("\nChunk write failed.\n");
 		  break;
-		 }
-		//	for( j = 0; j < 32; j++) printf("%02x ", chunk[j]);
-		//	printf("\n");
+		  }
+		
 		
 		cwrt++;
 		base += WR_CHNK_SIZE;
@@ -356,12 +358,15 @@ void writeHex( datSeq_t* hexdat)
 		    i++;
 		    base = hexdat[i].baseAdr < base ? base : hexdat[i].baseAdr;
 		  }
-
 	}
-	//printf("\nSending write stop.\n");
+	printf("\n%d chunk(s) written.\n", cwrt);
+	printf("Sending write stop...");
+	if (!echo('W', 'S'))
+	    printf("Failed.\n");
+	else
+	   printf("Confirmed.\n");
 
-	//	serWrite("STOPWT", 6);
-
+	return;
 }
 
 
