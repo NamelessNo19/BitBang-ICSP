@@ -320,13 +320,15 @@ int isPageEmpty(unsigned char* dat, unsigned char pgno)
 
 void writeHex( datSeq_t* hexdat)
 {
-  printf("Enabling write access...\n");
+  printf("Enabling write access...");
 	uint32_t base;
 	uint8_t chunk[WR_CHNK_SIZE];
 	int i = 0;
 	int j;
 
 	if (!echo('W', 'R')) return;
+       printf("OK.\n");
+
 
 	int cwrt = 0;
 
@@ -335,6 +337,7 @@ void writeHex( datSeq_t* hexdat)
 	{
 	  for ( j = 0; j < WR_CHNK_SIZE; j++) chunk[j] = 0xFF;
 		printf("\rWriting Chunk %d...", cwrt);
+		fflush(stdout);
 		seqToByteArray(hexdat, &chunk[0], base, WR_CHNK_SIZE);
 	
 		if (!picWriteChunk(&chunk, base))
@@ -355,9 +358,9 @@ void writeHex( datSeq_t* hexdat)
 		  }
 
 	}
-	printf("\nSending write stop.\n");
+	//printf("\nSending write stop.\n");
 
-	serWrite("STOPWT", 6);
+	//	serWrite("STOPWT", 6);
 
 }
 

@@ -22,13 +22,14 @@
 #define pinVSense 12
 #define pinSpeaker 6
 
-#define WR_CHNK_SIZE 30
+#define WR_CHNK_SIZE 32
 
 int ledpwr;
 char inbuf[6];
 int err;
 
 uint8_t datBuf[WR_CHNK_SIZE];
+uint32_t chnkAdr;
 
 
 void setup()
@@ -127,8 +128,10 @@ void loop()
   }
   else
   {
+    // Flushing inbput buffer
     tone(pinSpeaker, 330);
     delay(250);
+    while (Serial.available() > 0) Serial.read();
   }
 
 
@@ -238,80 +241,169 @@ void rdBlock(const uint8_t blockNo)
 
 void picwrite()
 {
-  if (!initTarget()) return;
-
-  enableWrite();
-  setAccessToFlash();
-
-  Serial.print("WR");
-  inbuf[0] = 0;
-  int i;
-
-  uint32_t base;
-  long tdat;
-
-  while (1)
-  {
-    if (Serial.readBytes(&inbuf[0], 6) != 6)
-    {
-      Serial.print("TC");
-      break;
-      return;
-    }
-
-    if (inbuf[0] != 'C' || inbuf[5] != 'W')
-    {
-      if (inbuf[0] != 'S' || inbuf[5] != 'T');
-      Serial.print("IC");
-      break;
-    }
-
-    base = inbuf[4];
-    base |= (uint32_t) inbuf[3] << 8;
-    base |= (uint32_t) inbuf[2] << 16;
-    base |= (uint32_t) inbuf[1] << 24;
-
-    if (base > 0x7FFF)
-    {
-      Serial.print("IA");
-      break;
-    }
-    Serial.print("CW");
-
-    setTablePtr(base);
-
-    // Read Data
-    if (Serial.readBytes((char*) &datBuf[0], WR_CHNK_SIZE) != WR_CHNK_SIZE)
-    {
-      Serial.print("TC");
-      break;
-      return;
-    }
-
-    for (i = 0; i < (WR_CHNK_SIZE / 2) - 1; i++)
-    {
-      tdat = (uint16_t) datBuf[2 * i + 1] <<  8;
-      tdat |= datBuf[2 * i];
-      cmdOut(CMD_OUT_TBWR_POSI2, tdat);
-      Serial.print(tdat, HEX);
-      Serial.write(':');
-    }
-
-
-    tdat = datBuf[WR_CHNK_SIZE - 1];
-    tdat <<= 8;
-    tdat |= datBuf[WR_CHNK_SIZE - 2];
-
-    cmdOut(CMD_OUT_TBWR_SP_POSI2, tdat);
-    clkFlashWrite(); 
-
-    //Serial.print(tdat, HEX);   
-    Serial.print("AW");
-  }
-  disableWrite();
-  pwrOffTarget();
-  Serial.print("AC");
+ //  if (!initTarget()) return;
+   Serial.print("WR");
+   if (!receiveChunk())
+   {
+ //    pwrOffTarget();
+     segWrite(SEG_F);
+     delay(1000);
+     return;
+   }
+   
+ //  setAccessToFlash();
+   int i;
+   
+ //  setTablePtr(chnkAdr + 0x80);
+   
+   
+  
+   uint16_t dat;
+  
+   
+ /*  for (i = 0; i < (WR_CHNK_SIZE / 2) - 1; i++)
+   {
+     dat = datBuf[2 * i + 1];
+     dat <<= 8;
+     dat |= datBuf[2 * i];
+          
+     _INL_cmdOut(CMD_OUT_TBWR_POSI2, dat);
+   } */
+   
+  /* 
+   dat = datBuf[WR_CHNK_SIZE - 1];
+   dat <<= 8;
+   dat |= datBuf[WR_CHNK_SIZE - 2];
+   _INL_cmdOut(CMD_OUT_TBWR_SP, dat); */
+   
+   
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[1]   << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[3]   << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[5]   << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[7]   << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[9]   << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[11]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[13]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[15]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[17]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[19]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[21]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[23]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[25]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[27]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[29]  << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_SP,    (datBuf[31]  << 8) | datBuf[0]);
+   
+   
+   
+   /*cmdOut(CMD_OUT_TBWR_POSI2, 0x0000);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0x6A83);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0x6A95);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0x6B60);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0x6B61);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0x7283);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0x2F60);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0xEF06);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0xF000);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0x2F61);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0xEF06);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0xF000);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0xEF05);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0xF000);
+   cmdOut(CMD_OUT_TBWR_POSI2, 0xFFFF);
+   
+   cmdOut(CMD_OUT_TBWR_SP, 0xFFFF); */
+   
+//  clkFlashWrite();
+   
+   segWrite(SEG_d);
+   delay(1000);
+   
+//  pwrOffTarget();
+   
 }
+
+
+boolean receiveChunk()
+{
+  // Read address
+  if (Serial.readBytes(&inbuf[0], 6) != 6)
+  {
+    Serial.print("TC"); // Read Timeout
+    return false;
+  }
+  
+  if (inbuf[0] != 'C' || inbuf[5] != 'W')
+  {
+    Serial.print("IC"); // Invalid command
+    return false;
+  }
+  
+  uint16_t checksum = 0xFFFF;
+  
+  chnkAdr = inbuf[1];
+  chnkAdr <<= 8;
+  chnkAdr |= inbuf[2];
+  chnkAdr <<= 8;
+  chnkAdr |= inbuf[3];
+  chnkAdr <<= 8;
+  chnkAdr |= inbuf[4];  
+  
+  if (chnkAdr > 0x007FFF)
+  {
+    Serial.print("IA"); // Invalid address
+    return false;
+  }
+  
+  // CRC16 address
+  checksum = _crc16_update(checksum, inbuf[1]);
+  checksum = _crc16_update(checksum, inbuf[2]);
+  checksum = _crc16_update(checksum, inbuf[3]);
+  checksum = _crc16_update(checksum, inbuf[4]);
+  
+  Serial.print("CW"); // Acknowledge address
+  Serial.flush();
+  
+  // Read Chunk data
+  if (Serial.readBytes((char*) &datBuf[0], WR_CHNK_SIZE) != WR_CHNK_SIZE)
+  {
+    Serial.print("TC"); // Read Timeout
+    return false;
+  }
+  
+  // CRC-16 data
+  int i;
+  for (i = 0; i < WR_CHNK_SIZE; i++)
+    checksum = _crc16_update(checksum, datBuf[i]);
+    
+  // Send checksum
+  Serial.write('C');
+  Serial.write(checksum >> 8);
+  Serial.write(checksum & 0x00FF);
+  Serial.write('S');
+  Serial.flush();
+  
+  // Wait for confirmation
+  if (Serial.readBytes(&inbuf[0], 2) != 2)
+  {
+    Serial.print("TC"); // Read Timeout
+    return false;
+  }
+  
+  if (inbuf[0] != 'A' || inbuf[1] != 'C')
+  {
+    Serial.print("ST"); // Invalid Checksum
+    return false;
+  }
+
+  Serial.print("AC");
+  Serial.flush();
+  return true;  
+}
+  
+  
+  
+  
 
 void erBlock()
 {

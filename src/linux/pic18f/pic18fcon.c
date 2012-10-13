@@ -125,8 +125,10 @@ int picDumpBlock(unsigned char* blkData, unsigned char blockNo)
 int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 {
 	uint8_t i;
-	uint8_t buf[WR_CHNK_SIZE];
+	uint8_t buf[6];
 
+	uint16_t cCRC = 0xFFFF;
+	uint16_t rCRC = 0;
 
 	// Sending Address
 
@@ -136,9 +138,22 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 	buf[3] = (adr & 0x0000FF00) >> 8;
 	buf[4] = (adr & 0x000000FF);
 	buf[5] = 'W';
-
-     
+	
+	printf("Sending address...\n");
 	serWrite(&buf[0], 6);
+
+	// Calculate checksum
+	cCRC =  crc16_update(cCRC, buf[1]);
+	cCRC =  crc16_update(cCRC, buf[2]);
+	cCRC =  crc16_update(cCRC, buf[3]);
+	cCRC =  crc16_update(cCRC, buf[4]);
+	printf("#\n");
+	for (i = 0; i < WR_CHNK_SIZE; i++)
+	  {
+	  cCRC = crc16_update(cCRC, (*chunk)[i]);
+	  printf("%02X ", (*chunk)[i]);
+	  }
+        printf("\n @0x%08X\n", adr);
 
 	if (!serRead(&buf[0], 3, TRUE))
 		return FALSE;
@@ -148,20 +163,44 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 		return FALSE;
 	}
 
-
 	// Write data
+	printf("Sending data...\n");
 	serWrite(&(*chunk)[0], WR_CHNK_SIZE);
 
-		serRead(&buf[0], WR_CHNK_SIZE, TRUE);
-		printf("\n- %s -\n", &buf[0]);
-
-	if (!serRead(&buf[0], 3, TRUE))
+	if (!serRead(&buf[0], 5, TRUE))
 		return FALSE;
-	else if (buf[0] != 'A' || buf[1] != 'W')
+	else if (buf[0] != 'C' || buf[3] != 'S')
 	{
-		printf("Invalid response '%c%c', expected AW.\n", buf[0], buf[1]);
+		printf("Invalid response '%c%c', expected CS.\n", buf[0], buf[3]);
 		return FALSE;
 	}
+
+	// Verify Checksum
+	rCRC = (buf[1] << 8) | buf[2];
+	if (rCRC != cCRC)
+	  {
+	    printf("Checksum missmatch! (C: 0x%x / R: 0x%x) Sending abort....\n", cCRC, rCRC);
+	    serWrite("CM", 2);
+
+	    if (!serRead(&buf[0], 3, TRUE))
+		return FALSE;
+	    else if (buf[0] != 'S' || buf[1] != 'T')
+	      {
+		printf("Invalid response '%c%c', expected ST.\n", buf[0], buf[1]);
+		return FALSE;
+	      }
+	    printf("Write aborted.\n");
+	    return FALSE;
+	  }
+
+	printf("Checksum OK. Sending confirmation...\n");
+	if (!echo('A','C'))
+	  {
+	    printf("Confirmation failed. \n");
+	    return FALSE;
+	  }
+
+	printf("Confirmed.\n");
 
 	return TRUE;
 }

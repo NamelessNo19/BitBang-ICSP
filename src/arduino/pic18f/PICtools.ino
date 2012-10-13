@@ -44,37 +44,45 @@ void pwrOffTarget()
 }
 
 
-void cmdOut(uint8_t cmd, uint16_t dat)
+void cmdOut(const uint8_t cmd, const uint16_t dat)
 {
   datOUT;
   int i;
   // Shift out command
+  
+  uint8_t mask8 = 0x01;
+  
   for (i = 0; i < 4; i++)
   {
-    if ((cmd & 0x01) == 0)
+    if ((cmd & mask8) == 0)
       digitalWrite(pinPGD, LOW);
     else
      digitalWrite(pinPGD, HIGH);
     
     clkHI; del; clkLO; del;
     
-    cmd = cmd >> 1;
+    mask8 <<= 1;
   }
   
+  del; del; del
+  
+  uint16_t mask16 = 0x0001;
   // Shift out data
   for (i = 0; i < 16; i++)
   {
-    if ((dat & 0x01) == 0)
+    if ((dat & mask16) == 0)
       digitalWrite(pinPGD, LOW);
     else
      digitalWrite(pinPGD, HIGH);
     
     clkHI; del; clkLO; del;
     
-    dat = dat >> 1;
+    mask16 <<= 1;
   }
   
 }
+
+
 
 uint8_t cmdIn(uint8_t cmd, uint8_t dat)
 {
