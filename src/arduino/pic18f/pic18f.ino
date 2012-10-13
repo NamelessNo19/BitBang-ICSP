@@ -241,88 +241,72 @@ void rdBlock(const uint8_t blockNo)
 
 void picwrite()
 {
- //  if (!initTarget()) return;
+  if (!initTarget()) return;
    Serial.print("WR");
    if (!receiveChunk())
    {
- //    pwrOffTarget();
+     pwrOffTarget();
      segWrite(SEG_F);
      delay(1000);
      return;
    }
    
- //  setAccessToFlash();
-   int i;
-   
- //  setTablePtr(chnkAdr + 0x80);
-   
-   
   
-   uint16_t dat;
+  setAccessToFlash(); 
   
-   
- /*  for (i = 0; i < (WR_CHNK_SIZE / 2) - 1; i++)
-   {
-     dat = datBuf[2 * i + 1];
-     dat <<= 8;
-     dat |= datBuf[2 * i];
-          
-     _INL_cmdOut(CMD_OUT_TBWR_POSI2, dat);
-   } */
-   
-  /* 
-   dat = datBuf[WR_CHNK_SIZE - 1];
-   dat <<= 8;
-   dat |= datBuf[WR_CHNK_SIZE - 2];
-   _INL_cmdOut(CMD_OUT_TBWR_SP, dat); */
-   
-   
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[1]   << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[3]   << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[5]   << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[7]   << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[9]   << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[11]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[13]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[15]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[17]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[19]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[21]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[23]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[25]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[27]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[29]  << 8) | datBuf[0]);
-   cmdOut(CMD_OUT_TBWR_SP,    (datBuf[31]  << 8) | datBuf[0]);
-   
-   
-   
-   /*cmdOut(CMD_OUT_TBWR_POSI2, 0x0000);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0x6A83);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0x6A95);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0x6B60);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0x6B61);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0x7283);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0x2F60);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0xEF06);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0xF000);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0x2F61);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0xEF06);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0xF000);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0xEF05);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0xF000);
-   cmdOut(CMD_OUT_TBWR_POSI2, 0xFFFF);
-   
-   cmdOut(CMD_OUT_TBWR_SP, 0xFFFF); */
-   
-//  clkFlashWrite();
+  
+  setTablePtr(chnkAdr);
+  writeChunkToFlash();  
    
    segWrite(SEG_d);
    delay(1000);
    
-//  pwrOffTarget();
+   pwrOffTarget();
    
 }
 
+/*
+void writeChunk()
+{
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[1]   << 8) | datBuf[0]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[3]   << 8) | datBuf[2]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[5]   << 8) | datBuf[4]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[7]   << 8) | datBuf[6]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[9]   << 8) | datBuf[8]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[11]  << 8) | datBuf[10]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[13]  << 8) | datBuf[12]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[15]  << 8) | datBuf[14]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[17]  << 8) | datBuf[16]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[19]  << 8) | datBuf[18]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[21]  << 8) | datBuf[20]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[23]  << 8) | datBuf[22]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[25]  << 8) | datBuf[24]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[27]  << 8) | datBuf[26]);
+   cmdOut(CMD_OUT_TBWR_POSI2, (datBuf[29]  << 8) | datBuf[28]);
+   cmdOut(CMD_OUT_TBWR_SP,    (datBuf[31]  << 8) | datBuf[30]);
+   clkFlashWrite();
+} */
+
+void writeChunkToFlash()
+{
+  int i;
+  uint16_t dat;
+  for (i = 0; i < ((WR_CHNK_SIZE / 2) - 1); i++)
+   {
+     dat = datBuf[(2 * i) + 1];
+     dat <<= 8;
+     dat |= datBuf[2 * i];       
+     cmdOut(CMD_OUT_TBWR_POSI2, dat);
+   } 
+   
+   dat = datBuf[WR_CHNK_SIZE - 1];
+   dat <<= 8;
+   dat |= datBuf[WR_CHNK_SIZE - 2];
+   cmdOut(CMD_OUT_TBWR_SP, dat);
+   
+   
+   clkFlashWrite();
+}
 
 boolean receiveChunk()
 {

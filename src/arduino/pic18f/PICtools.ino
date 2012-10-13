@@ -64,7 +64,7 @@ void cmdOut(const uint8_t cmd, const uint16_t dat)
     mask8 <<= 1;
   }
   
-  del; del; del
+  del; del; del;
   
   uint16_t mask16 = 0x0001;
   // Shift out data
