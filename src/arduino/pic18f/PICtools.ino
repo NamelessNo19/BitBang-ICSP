@@ -269,3 +269,20 @@ void bulkErase(const uint16_t erOpt)
 	    clkHI; del; clkLO; del;
 	  }
 }
+
+void writeConfig (const uint32_t confReg, const uint8_t conf)
+{
+ if (confReg < 0x300000L)
+   return;
+   
+  setAccessToFlash();
+  setTablePtr(confReg);
+  
+  uint16_t payload = conf;
+  if ((confReg % 2) == 1)
+    payload <<= 8;
+    
+ cmdOut(CMD_OUT_TBWR_SP, payload);
+ clkFlashWrite(); 
+  
+}

@@ -25,7 +25,7 @@
 #define WR_CHNK_SIZE 32
 
 int ledpwr;
-char inbuf[6];
+uint8_t inbuf[6];
 int err;
 
 uint8_t datBuf[WR_CHNK_SIZE];
@@ -104,7 +104,7 @@ void loop()
    segWrite(SEG_b);
    #endif
 
-  Serial.readBytes(&inbuf[0], 2);
+  Serial.readBytes((char*) &inbuf[0], 2);
 
   if (inbuf[0] == 'I' && inbuf[1] == 'D')
   {
@@ -114,7 +114,7 @@ void loop()
   else if (inbuf[0] == 'R' && inbuf[1] == 'B')
   {
     while (Serial.available() == 0) delay(100);
-    Serial.readBytes(&inbuf[0], 1);
+    Serial.readBytes((char*) &inbuf[0], 1);
     segWrite(segNum(inbuf[0], false));
     rdBlock(inbuf[0]);
   }
@@ -125,6 +125,17 @@ void loop()
   else if (inbuf[0] == 'E' && inbuf[1] == 'R')
   { 
     erBlock();
+  }
+  else if (inbuf[0] == 'C' && inbuf[1] == 'G')
+  { 
+    if (!pgmEnable()) {
+      pwrOffTarget();
+      Serial.print("SF");
+    } else {
+    writeConfig(MEM_CONFIG1H, 0B00001011);
+    pwrOffTarget();
+    Serial.print("CG");
+    }
   }
   else
   {
@@ -221,7 +232,7 @@ void rdBlock(const uint8_t blockNo)
     for (i = 0; i < 32; i++)
       Serial.write(readByte());
 
-    if (Serial.readBytes(&inbuf[0], 2) != 2)
+    if (Serial.readBytes((char*) &inbuf[0], 2) != 2)
     {
       Serial.print("TC");
       break;
@@ -251,7 +262,7 @@ void picwrite()
    {
     
     // New Chunk or stop 
-    if (Serial.readBytes(&inbuf[0], 2) != 2)
+    if (Serial.readBytes((char*) &inbuf[0], 2) != 2)
     {
       Serial.print("TC");
       break;
@@ -335,7 +346,7 @@ void writeChunkToFlash()
 boolean receiveChunk()
 {
   // Read address
-  if (Serial.readBytes(&inbuf[0], 6) != 6)
+  if (Serial.readBytes((char*) &inbuf[0], 6) != 6)
   {
     Serial.print("TC"); // Read Timeout
     return false;
@@ -392,7 +403,7 @@ boolean receiveChunk()
   Serial.flush();
   
   // Wait for confirmation
-  if (Serial.readBytes(&inbuf[0], 2) != 2)
+  if (Serial.readBytes((char*) &inbuf[0], 2) != 2)
   {
     Serial.print("TC"); // Read Timeout
     return false;
@@ -419,7 +430,7 @@ void erBlock()
   uint16_t eropt;
   Serial.print("ER");
 
-  int res = Serial.readBytes(&inbuf[0], 1);
+  int res = Serial.readBytes((char*) &inbuf[0], 1);
   
   if (res != 1)
   {
