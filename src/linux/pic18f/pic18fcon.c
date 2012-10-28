@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 const char* CONF_REG_STR[] = {"CONFIG1L", "CONFIG1H", "CONFIG2L", "CONFIG2H", "CONFIG3H", "CONFIG4L",
 			  "CONFIG5L", "CONFIG5H", "CONFIG6L", "CONFIG6H", "CONFIG7L", "CONFIG7H"};
+
+const unsigned char CONF_REG_ADR[] = {0x00, 0x01, 0x02, 0x03, 0x05, 0x06, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D};
+const unsigned char CONF_REG_DEF[] = {0x00, 0x0B, 0x01, 0x00, 0x81, 0xC4, 0x0F, 0xC0, 0x0F, 0xE0, 0x0F, 0x40};
+
 
 int echo(unsigned char c1, unsigned char c2)
 {
@@ -219,7 +224,7 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 
 int picBulkErase(uint8_t blockNo)
 {
-  if (blockNo >= 4 && blockNo != 0x0B)
+  if (blockNo >= 4 && blockNo != 0x0B && blockNo != 0x0C)
     {
       printf("Unexpected block %d!\n", blockNo);
       return FALSE;
@@ -250,6 +255,58 @@ int picBulkErase(uint8_t blockNo)
   else
    {
      printf("Invalid response '%c%c'.\n", buf[0], buf[1]);
+     return FALSE;
+   }
+
+}
+
+int picWriteConf(uint8_t cReg, uint8_t cVal)
+{
+  if (!echo('C', 'G'))
+     return FALSE;
+
+  unsigned char buf[5];
+
+  buf[0] = 'A';
+  buf[1] = cReg;
+  buf[2] = 'C';
+  buf[3] = cVal;
+  serWrite(&buf[0], 4);
+
+ if (!serRead(&buf[0], 5, TRUE))
+	return FALSE;
+  else if (buf[0] != 'C' || buf[2] != 'A')
+  {
+	 printf("\nInvalid response '%c%c'.\n", buf[0], buf[2]);
+	return FALSE;
+  }
+  else if (buf[1] != cVal || buf[3] != cReg)
+    {
+      printf("\nTransmission failed.\n");
+      serWrite("IV", 2);
+    }
+
+ serWrite("AC", 2);
+
+if (!serRead(&buf[0], 3, TRUE))
+	return FALSE;
+  else if (buf[0] == 'I' || buf[1] == 'A')
+  {
+	printf("\nConfiguration rejected by programmer.\n");
+	return FALSE;
+  }
+  else if (buf[0] == 'S' || buf[1] == 'F')
+  {
+	printf("\nSynchronization failed.\n");
+	return FALSE;
+  }
+  else if (buf[0] == 'C' || buf[1] == 'W')
+  {
+	return TRUE;
+  }
+  else
+   {
+     printf("\nInvalid response '%c%c'.\n", buf[0], buf[1]);
      return FALSE;
    }
 

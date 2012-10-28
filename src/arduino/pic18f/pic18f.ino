@@ -126,16 +126,9 @@ void loop()
   { 
     erBlock();
   }
-  else if (inbuf[0] == 'C' && inbuf[1] == 'G')
+  else if (inbuf[0] == 'C' && inbuf[1] == 'W')
   { 
-    if (!pgmEnable()) {
-      pwrOffTarget();
-      Serial.print("SF");
-    } else {
-    writeConfig(MEM_CONFIG1H, 0B00001011);
-    pwrOffTarget();
-    Serial.print("CG");
-    }
+    writeConf();
   }
   else
   {
@@ -420,7 +413,79 @@ boolean receiveChunk()
   return true;  
 }
   
+ 
+void writeConf()
+{
+  if (!initTarget()) return;
+  Serial.print("CW");
   
+  int rc;
+  bool confStop = false;
+  while (!confStop) 
+  {
+    rc = Serial.readBytes((char*) &inbuf[0], 2);
+    if (rc != 2 || inbuf[0] != 'C' || inbuf[1] != 'G')
+      confStop = true;
+    else
+      if (!writeConfReg())
+      {
+        tone(pinSpeaker, 700);
+        delay(150);
+        noTone(pinSpeaker);
+        delay(150);
+        tone(pinSpeaker, 700);
+        delay(150);
+        noTone(pinSpeaker);
+        confStop = true;
+      }
+  }
+  pwrOffTarget();
+}
+  
+bool writeConfReg()
+{
+  Serial.print("CG");
+  
+  int rc = Serial.readBytes((char*) &inbuf[0], 4);
+  
+  if (rc != 4)
+  {
+    Serial.print("TC");
+    return false;
+  }
+  
+  uint8_t reg = inbuf[1];
+  uint8_t dat = inbuf[3];
+  
+  if (inbuf[0] != 'A' || inbuf[2] != 'C')
+  {
+    Serial.print("ST");
+    return false;
+  }
+  
+  Serial.write('C');
+  Serial.write(dat);
+  Serial.write('A');
+  Serial.write(reg);
+  
+  rc = Serial.readBytes((char*) &inbuf[0], 2);
+  
+  if (inbuf[0] != 'A' || inbuf[1] != 'C')
+    return false;
+  
+  
+  if (reg > 0x0D || reg == 0x04 || reg == 0x07)
+  {
+    Serial.print("IA");
+    return false;
+  } 
+  
+  writeConfig(0x300000L + (uint32_t) reg, dat);
+  
+  Serial.print("CW");
+  Serial.flush();
+  return true;
+}  
   
   
 
@@ -456,6 +521,9 @@ void erBlock()
     //case 5: eropt = BLKER_CEP_B5; break;
   case 0x0B: 
     eropt = BLKER_BB;  
+    break;
+  case 0x0C: 
+    eropt = BLKER_CB;  
     break;
   default:
     Serial.print("IA");

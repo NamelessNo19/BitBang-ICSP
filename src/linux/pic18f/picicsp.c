@@ -20,6 +20,7 @@ typedef struct conf_s
   char* hexfile;
   int hashex;
   int ident;
+  int resConf;
 } conf_t;
 
 int parseArgs(int argc, char **argv, conf_t *conf);
@@ -27,7 +28,7 @@ int verifyConf(conf_t *conf);
 int decodeHex(const char* path,  datSeq_t* data);
 void writeHex(datSeq_t* hexdat);
 void dump(const char* path, unsigned char blockNo);
-
+void resetConfig();
 
 int main (int argc, char **argv)
 {
@@ -55,10 +56,27 @@ int main (int argc, char **argv)
 	
 	if (conf.erase)
 		{
-		  if (conf.blockNo != 66)
-		    printf("Are you sure you want to erase block %d? (Y/N): ", (unsigned int)conf.blockNo);
-		  else
+
+		  if (conf.blockNo == 66)
 		    printf("Are you sure you want to erase the boot block? (Y/N): ");
+		  else if (conf.blockNo == 67)
+		     printf("Are you sure you want to erase the configuration bits? (Y/N): ");
+		  else
+		    printf("Are you sure you want to erase block %d? (Y/N): ", (unsigned int)conf.blockNo);
+
+			char in;
+			scanf("%c", &in);
+			if (in != 'y' && in != 'Y')
+			{
+				printf("Aborted.\n");
+				free(hexdt);
+				return;
+			}
+		}
+
+	if (conf.resConf)
+		{
+		    printf("Are you sure you want to rewrite the configuration bits? (Y/N): ");
 			char in;
 			scanf("%c", &in);
 			if (in != 'y' && in != 'Y')
@@ -111,11 +129,12 @@ int main (int argc, char **argv)
 	  writeHex(hexdt);
 	else if (conf.erase)
 	  {
-	    if (conf.blockNo < 4 || conf.blockNo == 'B')  
-	      picBulkErase(conf.blockNo == 'B' ? 0x0b : conf.blockNo);
-	    else
-	      printf("Invalid block.\n");
+	    if (conf.blockNo == 'B') conf.blockNo = 0x0b;
+	    else if (conf.blockNo == 'C') conf.blockNo = 0x0c;
+	    picBulkErase(conf.blockNo);
 	  }
+	else if (conf.resConf)
+	  resetConfig();
 		
 		
 		
@@ -139,9 +158,10 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	conf->erase = FALSE;
 	conf->hashex = FALSE;
 	conf->hexfile = NULL;
+	conf->resConf = FALSE;
 	conf->blockNo = 0;
 	 
-	 while ((ai = getopt (argc, argv, "ip:d:e:h:w")) != -1)
+	 while ((ai = getopt (argc, argv, "ip:d:e:h:wC")) != -1)
          switch (ai)
            {
            case 'i':
@@ -151,6 +171,8 @@ int parseArgs(int argc, char **argv, conf_t *conf)
              conf->erase = TRUE;
 	     if (optarg[0] == 'b' || optarg[0] == 'B')
 	       conf->blockNo = 'B';
+	     else if (optarg[0] == 'c' || optarg[0] == 'C')
+	       conf->blockNo = 'C';
 	     else
 	      conf->blockNo = atoi(optarg);
              break;
@@ -170,6 +192,9 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	   case 'h':
 	     conf->hashex = TRUE;
 	     conf->hexfile = optarg;
+	     break;
+	   case 'C':
+	     conf->resConf = TRUE;
 	     break;
            case '?':
              if (optopt == 'p' || optopt == 'd' || optopt == 'w')
@@ -204,7 +229,7 @@ int verifyConf(conf_t *conf)
 		return FALSE;
 	}
 	
-	if (!conf->dump && !conf->ident && !conf->write && !conf->erase)
+	if (!conf->dump && !conf->ident && !conf->write && !conf->erase && !conf->resConf)
 	{
 		printf("No operation specified.\n");
 		return FALSE;
@@ -246,6 +271,31 @@ int verifyConf(conf_t *conf)
 		printf("Incompatible arguments '-e' and '-w'.\n");
 			return FALSE;
 	}
+
+	if (conf->erase && conf->resConf)
+	{
+		printf("Incompatible arguments '-e' and '-C'.\n");
+			return FALSE;
+	}
+
+	if (conf->resConf && conf->ident)
+	{
+		printf("Incompatible arguments '-C' and '-i'.\n");
+		return FALSE;
+	}
+
+	if (conf->resConf && conf->dump)
+	{
+		printf("Incompatible arguments '-C' and '-d'.\n");
+			return FALSE;
+	}
+
+	if (conf->resConf && conf->write)
+	{
+		printf("Incompatible arguments '-C' and '-w'.\n");
+			return FALSE;
+	}
+
 
 	if (conf->ident && conf->hashex)
 	{
@@ -400,4 +450,27 @@ void dump(const char* path, unsigned char blockNo)
 
 	free(dat);
 	return;
+}
+
+void resetConfig()
+{
+  printf("Resetting configuration.\n");
+  int i;
+  if (!echo('C', 'W'))
+    return;
+
+  for (i = 0; i < 12; i++)
+    {
+      printf("Writing 0x%02X to %s... ", CONF_REG_DEF[i], CONF_REG_STR[i]);
+      if (picWriteConf(CONF_REG_ADR[i], CONF_REG_DEF[i]))
+	{
+	  printf("OK\n");
+	}
+      else
+	{
+	  printf("Aborting.\n");
+	  break;
+	}
+    }
+  serWrite("ST", 2);
 }
