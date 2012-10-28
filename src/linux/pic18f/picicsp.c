@@ -29,6 +29,7 @@ int decodeHex(const char* path,  datSeq_t* data);
 void writeHex(datSeq_t* hexdat);
 void dump(const char* path, unsigned char blockNo);
 void resetConfig();
+void writeConfig(uint8_t* dat);
 
 int main (int argc, char **argv)
 {
@@ -44,15 +45,38 @@ int main (int argc, char **argv)
 
 	 datSeq_t* hexdt = malloc(256 * sizeof(datSeq_t));
 
-
+	 int hasConf = FALSE;
+	 uint8_t confDat[14] = {[0 ... 13] = 0xFF};
 
 	if (conf.hashex && conf.write)
-	  if (!decodeHex(conf.hexfile, hexdt))
-	    {
-	      printf("Aborted.\n");
-	      free(hexdt);
-	      return 0;
-	    }
+	  {
+	    if (!decodeHex(conf.hexfile, hexdt))
+	      {
+		printf("Aborted.\n");
+		free(hexdt);
+		return 0;
+	      }
+
+	    // Check for configuration bit
+	    hasConf = (seqToByteArray(hexdt, &confDat[0], 0x30000000L, 14) > 0);
+	    if (hasConf)
+	      {
+		printf("This Hexfile includes configuration bits. Do you want to write them? (Y/N): ");
+		char in;
+		scanf("%c", &in);
+		if (in != 'y' && in != 'Y')
+		  {
+		    printf("Ignoring configuration bits.\n");
+		    hasConf = FALSE;
+		  }  
+	      }
+	    else
+	      {
+		printf("No configuration bits found.\n");
+	      }
+
+
+	  }
 	
 	if (conf.erase)
 		{
@@ -126,7 +150,11 @@ int main (int argc, char **argv)
 	else if (conf.dump)
 		dump(conf.hexfile, conf.blockNo);
 	else if (conf.write)
-	  writeHex(hexdt);
+	  {
+	    writeHex(hexdt);
+	    if (hasConf)
+	      writeConfig(&confDat[0]);
+	  }
 	else if (conf.erase)
 	  {
 	    if (conf.blockNo == 'B') conf.blockNo = 0x0b;
@@ -134,7 +162,7 @@ int main (int argc, char **argv)
 	    picBulkErase(conf.blockNo);
 	  }
 	else if (conf.resConf)
-	  resetConfig();
+	  writeConfig((uint8_t*) &CONF_REG_DEF[0]);
 		
 		
 		
@@ -341,17 +369,23 @@ int decodeHex(const char* path, datSeq_t* data)
   if (count < 0)
     {
       printf("Could not parse Hexfile.\n");
+      close(hfd);
       return FALSE;
     }
   else if (count == 0)
     {
       printf("Unable to read Data from Hexfile.\n");
+      close(hfd);
       return FALSE;
     }
   else
     {
       printf("Got %ld bytes from Hexfile.\n", count);
     }
+
+ int i;
+ for (i = 0; data[i].length > 0;  i++)
+     printf("Base: 0x%08x  -  Length: %d\n", data[i].baseAdr, data[i].length);
 
 
   close(hfd);
@@ -452,25 +486,30 @@ void dump(const char* path, unsigned char blockNo)
 	return;
 }
 
-void resetConfig()
+void writeConfig(uint8_t* dat)
 {
-  printf("Resetting configuration.\n");
-  int i;
+  printf("Preparing to write configuration bits...\n");
   if (!echo('C', 'W'))
     return;
-
-  for (i = 0; i < 12; i++)
+  int i;
+  uint8_t cByte;
+ for (i = 0; i < 12; i++)
     {
-      printf("Writing 0x%02X to %s... ", CONF_REG_DEF[i], CONF_REG_STR[i]);
-      if (picWriteConf(CONF_REG_ADR[i], CONF_REG_DEF[i]))
+      cByte = dat[CONF_REG_ADR[i]];
+      if (cByte != 0xFF)
 	{
-	  printf("OK\n");
-	}
-      else
-	{
-	  printf("Aborting.\n");
-	  break;
+	  printf("Writing 0x%02X to %s... ",cByte, CONF_REG_STR[i]);
+	  if (picWriteConf(CONF_REG_ADR[i], cByte))
+	    {
+	      printf("OK\n");
+	    }
+	  else
+	    {
+	      printf("Aborting.\n");
+	      break;
+	    }
 	}
     }
   serWrite("ST", 2);
+
 }

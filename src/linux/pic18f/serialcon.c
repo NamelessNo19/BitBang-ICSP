@@ -27,6 +27,9 @@ int serOpen(char *port)
 		printf("There already is a connection.\n");
 		return TRUE;
 	}
+
+	struct termios serOpts;
+
 	
 	portFd = open(port, O_RDWR | O_NOCTTY | O_NDELAY);
 	if (portFd == -1 ) 
@@ -43,6 +46,21 @@ int serOpen(char *port)
 
 	timeout.tv_sec = TIMEOUT_SEC;
 	timeout.tv_usec = 0;
+
+	tcgetattr(portFd, &serOpts);
+	cfsetispeed(&serOpts, B9600);
+	cfsetospeed(&serOpts, B9600);
+	serOpts.c_iflag &= ~(BRKINT | ICRNL | ISTRIP | IXON);
+	serOpts.c_cflag &= ~(CSIZE | PARENB); 
+	serOpts.c_cflag |= CS8;
+	serOpts.c_oflag &= ~(OPOST);
+	serOpts.c_lflag &= ~(ICANON | ECHO | ISIG | IEXTEN);
+	serOpts.c_cc[VMIN] = 0;
+	serOpts.c_cc[VTIME] = 0;
+	if (tcsetattr(portFd, TCSANOW, &serOpts) != 0)
+	  {
+	    printf("WARNING: Setting serial attributes failed. Serial connection might not work properly.\n");
+	  }
 	
 	printf("Port opened.\n");
 	return TRUE;
