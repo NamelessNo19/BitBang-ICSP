@@ -49,6 +49,7 @@ int main (int argc, char **argv)
 	 uint8_t confDat[14] = {[0 ... 13] = 0xFF};
 	 int hasDatEEPROM = FALSE;
 	 uint8_t eeDat[256];
+	 int hexAlloced = FALSE;
 
 	if (conf.hashex && conf.write)
 	  {
@@ -57,6 +58,10 @@ int main (int argc, char **argv)
 		printf("Aborted.\n");
 		free(hexdt);
 		return 0;
+	      }
+	    else
+	      {
+		hexAlloced = TRUE;
 	      }
 
 	    // Check for configuration bit
@@ -87,8 +92,10 @@ int main (int argc, char **argv)
 		if (in != 'y' && in != 'Y')
 		  {
 		  printf("Aborted.\n");
-		  cleanUpSeq(hexdt);
-		free(hexdt);
+		  if (hexAlloced)
+		      cleanUpSeq(hexdt);
+		  free(hexdt);
+		    
 		return 0;
 		  }  
 	      }
@@ -109,7 +116,8 @@ int main (int argc, char **argv)
 			if (in != 'y' && in != 'Y')
 			{
 				printf("Aborted.\n");
-				cleanUpSeq(hexdt);
+				if (hexAlloced)
+				  cleanUpSeq(hexdt);
 				free(hexdt);
 				return 0;
 			}
@@ -123,7 +131,8 @@ int main (int argc, char **argv)
 			if (in != 'y' && in != 'Y')
 			{
 				printf("Aborted.\n");
-				cleanUpSeq(hexdt);
+				if (hexAlloced)
+				  cleanUpSeq(hexdt);
 				free(hexdt);
 				return 0;
 			}
@@ -132,7 +141,8 @@ int main (int argc, char **argv)
 
 	if (!serOpen(conf.port))
 	{
-	  cleanUpSeq(hexdt);
+	  if (hexAlloced)
+	    cleanUpSeq(hexdt);
 	  free(hexdt);
 	  return 3;
 	}
@@ -148,7 +158,8 @@ int main (int argc, char **argv)
 	if (!serRead(&buffer[0], 2, TRUE))
 	{
 		serClose();
-		cleanUpSeq(hexdt);
+		if (hexAlloced)
+		  cleanUpSeq(hexdt);
 		free(hexdt);
 		return 0;
 	} 
@@ -189,7 +200,8 @@ int main (int argc, char **argv)
 	// Finishing
 	serClose();
 	printf("Done.\n");
-	cleanUpSeq(hexdt);
+	if (hexAlloced)
+	  cleanUpSeq(hexdt);
 	 free(hexdt);
 	return 0;
 }

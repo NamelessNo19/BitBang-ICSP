@@ -65,7 +65,7 @@ void cleanUpSeq(datSeq_t* buf)
 	    //	    printf("Free buf[%d]\n", i);
 	    free(buf[i].data);
 	  }
-	printf("Released %d segments.\n", i);
+	printf("Released %d Hexfile segments.\n", i);
 }
 
 
