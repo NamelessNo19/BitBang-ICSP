@@ -58,11 +58,14 @@ size_t parseHexFile (int hexFileDesc, datSeq_t* buf)
 
 void cleanUpSeq(datSeq_t* buf)
 {
+  // printf("Starting cleanup.\n");
 	int i;
 	for (i = 0; buf[i].length != 0; i++)
-		free(buf[i].data);
-
-	//	printf("Released %d segments.\n", i);
+	  {
+	    //	    printf("Free buf[%d]\n", i);
+	    free(buf[i].data);
+	  }
+	printf("Released %d segments.\n", i);
 }
 
 
@@ -120,6 +123,7 @@ long parseHexLine(datSeq_t* buf)
 	{
 		buf->baseAdr = (ulba << 16) + adr;
 		buf->length = count;
+		//	printf("Alloc %d Bytes for base 0x%08x\n", count, buf->baseAdr);
 		buf->data = malloc(count);
 
 		int i;

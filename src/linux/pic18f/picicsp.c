@@ -43,10 +43,12 @@ int main (int argc, char **argv)
 	if (!verifyConf(&conf))
 		return 2;
 
-	 datSeq_t* hexdt = malloc(256 * sizeof(datSeq_t));
+	 datSeq_t* hexdt = malloc(1024 * sizeof(datSeq_t));
 
 	 int hasConf = FALSE;
 	 uint8_t confDat[14] = {[0 ... 13] = 0xFF};
+	 int hasDatEEPROM = FALSE;
+	 uint8_t eeDat[256];
 
 	if (conf.hashex && conf.write)
 	  {
@@ -75,7 +77,21 @@ int main (int argc, char **argv)
 		printf("No configuration bits found.\n");
 	      }
 
-
+	    // Check for data EEPROM
+	    hasDatEEPROM = (seqToByteArray(hexdt, &eeDat[0], 0xF00000L, 256) > 0);
+	    if (hasDatEEPROM)
+	      {
+		printf("This Hexfile includes a segemt for the data EEPROM. Writing this is currently not supported. Do you wnat to continue anyway? (Y/N): ");
+		char in;
+		scanf("%c", &in);
+		if (in != 'y' && in != 'Y')
+		  {
+		  printf("Aborted.\n");
+		  cleanUpSeq(hexdt);
+		free(hexdt);
+		return 0;
+		  }  
+	      }
 	  }
 	
 	if (conf.erase)
@@ -93,8 +109,9 @@ int main (int argc, char **argv)
 			if (in != 'y' && in != 'Y')
 			{
 				printf("Aborted.\n");
+				cleanUpSeq(hexdt);
 				free(hexdt);
-				return;
+				return 0;
 			}
 		}
 
@@ -106,16 +123,18 @@ int main (int argc, char **argv)
 			if (in != 'y' && in != 'Y')
 			{
 				printf("Aborted.\n");
+				cleanUpSeq(hexdt);
 				free(hexdt);
-				return;
+				return 0;
 			}
 		}
 
 
 	if (!serOpen(conf.port))
 	{
-		 free(hexdt);
-		 return 3;
+	  cleanUpSeq(hexdt);
+	  free(hexdt);
+	  return 3;
 	}
 		
 	// Waiting		
@@ -129,6 +148,7 @@ int main (int argc, char **argv)
 	if (!serRead(&buffer[0], 2, TRUE))
 	{
 		serClose();
+		cleanUpSeq(hexdt);
 		free(hexdt);
 		return 0;
 	} 
@@ -169,6 +189,7 @@ int main (int argc, char **argv)
 	// Finishing
 	serClose();
 	printf("Done.\n");
+	cleanUpSeq(hexdt);
 	 free(hexdt);
 	return 0;
 }
@@ -383,9 +404,9 @@ int decodeHex(const char* path, datSeq_t* data)
       printf("Got %ld bytes from Hexfile.\n", count);
     }
 
-  // int i;
-  //for (i = 0; data[i].length > 0;  i++)
-  //   printf("Base: 0x%08x  -  Length: %d\n", data[i].baseAdr, data[i].length);
+  //   int i;
+  //  for (i = 0; data[i].length > 0;  i++)
+  //  printf("%d: Base: 0x%08x  -  Length: %d\n", i,  data[i].baseAdr, data[i].length);
 
 
   close(hfd);
