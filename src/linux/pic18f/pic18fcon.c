@@ -225,7 +225,7 @@ int picWriteChunk(uint8_t (*chunk)[WR_CHNK_SIZE], const uint32_t adr)
 
 int picBulkErase(uint8_t blockNo)
 {
-  if (blockNo >= 4 && blockNo != 0x0B && blockNo != 0x0C)
+  if (blockNo >= 4 && blockNo != 0x0B && blockNo != 0x0C && blockNo != 0xCE)
     {
       printf("Unexpected block %d!\n", blockNo);
       return FALSE;

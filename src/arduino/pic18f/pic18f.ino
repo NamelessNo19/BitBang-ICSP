@@ -525,6 +525,9 @@ void erBlock()
   case 0x0C: 
     eropt = BLKER_CB;  
     break;
+  case 0xCE: 
+    eropt = BLKER_CE;  
+    break;
   default:
     Serial.print("IA");
     return;

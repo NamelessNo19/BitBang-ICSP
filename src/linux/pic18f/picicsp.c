@@ -104,10 +104,12 @@ int main (int argc, char **argv)
 	if (conf.erase)
 		{
 
-		  if (conf.blockNo == 66)
+		  if (conf.blockNo == 'B')
 		    printf("Are you sure you want to erase the boot block? (Y/N): ");
-		  else if (conf.blockNo == 67)
+		  else if (conf.blockNo == 'C')
 		     printf("Are you sure you want to erase the configuration bits? (Y/N): ");
+		  else if (conf.blockNo == 'X')
+		     printf("Are you sure you want to erase ALL of the chip's memory? (Y/N): ");
 		  else
 		    printf("Are you sure you want to erase block %d? (Y/N): ", (unsigned int)conf.blockNo);
 
@@ -190,6 +192,7 @@ int main (int argc, char **argv)
 	  {
 	    if (conf.blockNo == 'B') conf.blockNo = 0x0b;
 	    else if (conf.blockNo == 'C') conf.blockNo = 0x0c;
+            else if (conf.blockNo == 'X') conf.blockNo = 0xce;
 	    picBulkErase(conf.blockNo);
 	  }
 	else if (conf.resConf)
@@ -234,6 +237,8 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	       conf->blockNo = 'B';
 	     else if (optarg[0] == 'c' || optarg[0] == 'C')
 	       conf->blockNo = 'C';
+	     else if (optarg[0] == 'x' || optarg[0] == 'X')
+	       conf->blockNo = 'X';
 	     else
 	      conf->blockNo = atoi(optarg);
              break;
