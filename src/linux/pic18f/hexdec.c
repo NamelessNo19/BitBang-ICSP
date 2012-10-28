@@ -135,10 +135,10 @@ long parseHexLine(datSeq_t* buf)
 	{
 		byte = readByte();
 		checksum += byte;
-		ulba = byte;
+		ulba = byte << byte;
 		byte = readByte();
 		checksum += byte;
-		ulba += byte << 8;
+		ulba += byte;
 		count = 0;
 	}
 	else

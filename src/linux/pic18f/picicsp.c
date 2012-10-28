@@ -58,7 +58,7 @@ int main (int argc, char **argv)
 	      }
 
 	    // Check for configuration bit
-	    hasConf = (seqToByteArray(hexdt, &confDat[0], 0x30000000L, 14) > 0);
+	    hasConf = (seqToByteArray(hexdt, &confDat[0], 0x300000L, 14) > 0);
 	    if (hasConf)
 	      {
 		printf("This Hexfile includes configuration bits. Do you want to write them? (Y/N): ");
@@ -383,9 +383,9 @@ int decodeHex(const char* path, datSeq_t* data)
       printf("Got %ld bytes from Hexfile.\n", count);
     }
 
- int i;
- for (i = 0; data[i].length > 0;  i++)
-     printf("Base: 0x%08x  -  Length: %d\n", data[i].baseAdr, data[i].length);
+  // int i;
+  //for (i = 0; data[i].length > 0;  i++)
+  //   printf("Base: 0x%08x  -  Length: %d\n", data[i].baseAdr, data[i].length);
 
 
   close(hfd);
