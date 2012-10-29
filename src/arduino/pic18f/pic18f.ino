@@ -1,8 +1,10 @@
 #include <util/crc16.h>
 #include "PIC18Fconst.h"
 
-#define SEVSEG
+// #define SEVSEG
+#ifdef SEVSEG
 #include "sevsegconst.h"
+#endif
 
 #define pinMCLR 11
 #define pinPGD 10
@@ -115,7 +117,9 @@ void loop()
   {
     while (Serial.available() == 0) delay(100);
     Serial.readBytes((char*) &inbuf[0], 1);
+    #ifdef SEVSEG
     segWrite(segNum(inbuf[0], false));
+    #endif
     rdBlock(inbuf[0]);
   }
   else if (inbuf[0] == 'W' && inbuf[1] == 'R')
@@ -272,7 +276,9 @@ void picwrite()
        {
          // Receive Failed
          pwrOffTarget();
+         #ifdef SEVSEG
          segWrite(SEG_F);
+         #endif
          delay(1000);
          return;
        }
@@ -286,8 +292,10 @@ void picwrite()
    
    // Confirm
    Serial.print("WS");
+   #ifdef SEVSEG
    segWrite(SEG_d);
    delay(1000);
+   #endif
    
    pwrOffTarget();
    
@@ -324,12 +332,18 @@ void writeChunkToFlash()
      dat = datBuf[(2 * i) + 1];
      dat <<= 8;
      dat |= datBuf[2 * i];       
+     
+  //   dat = chnkAdr & 0x0000FFFF;
+     
      cmdOut(CMD_OUT_TBWR_POSI2, dat);
    } 
    
    dat = datBuf[WR_CHNK_SIZE - 1];
    dat <<= 8;
    dat |= datBuf[WR_CHNK_SIZE - 2];
+   
+  //  dat = chnkAdr & 0x0000FFFF;
+   
    cmdOut(CMD_OUT_TBWR_SP, dat);
    
    

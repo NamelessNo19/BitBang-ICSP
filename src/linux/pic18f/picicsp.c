@@ -249,6 +249,8 @@ int parseArgs(int argc, char **argv, conf_t *conf)
 	     conf->dump = TRUE;
 	     if (optarg[0] == 'b' || optarg[0] == 'B')
 	       conf->blockNo = 'B';
+	     else if (optarg[0] == 'f' || optarg[0] == 'F')
+	       conf->blockNo = 'F';
 	     else
 	      conf->blockNo = atoi(optarg);
              break;
@@ -425,6 +427,40 @@ int decodeHex(const char* path, datSeq_t* data)
   //  for (i = 0; data[i].length > 0;  i++)
   //  printf("%d: Base: 0x%08x  -  Length: %d\n", i,  data[i].baseAdr, data[i].length);
 
+  // Creating a local binary copy
+
+	const size_t blockSize = 8192;
+	FILE* outf = fopen("HEXDMP.BIN", "wb+");
+
+	if(outf == 0)
+	{
+		printf("Cannot open \"%s\" for writing.", path);
+		return;
+	}
+
+	uint8_t* dat = malloc(blockSize);
+	size_t byteCount = 0;
+	size_t i;
+do
+  {
+
+    for (i = 0; i < blockSize; i++) dat[i] = 0xFF;
+
+    seqToByteArray(data, dat, byteCount, blockSize);
+    byteCount += blockSize;
+
+    if (fwrite(dat, 1, blockSize, outf) != blockSize) {
+       	printf("Failed.\n");
+	break;
+    }
+  }
+ while (byteCount < 32768);
+
+	free(dat);
+        fclose(outf);
+
+     
+
 
   close(hfd);
   return TRUE;
@@ -448,7 +484,7 @@ void writeHex( datSeq_t* hexdat)
 	int i = 0;
 	int j;
 
-	if (!echo('W', 'R')) return;
+       if (!echo('W', 'R')) return;
        printf("OK.\n");
 
 
@@ -457,11 +493,13 @@ void writeHex( datSeq_t* hexdat)
 	base = hexdat[i].baseAdr;
 	while (hexdat[i].length > 0 && base <= 0x8000)
 	{
-	  for ( j = 0; j < WR_CHNK_SIZE; j++) chunk[j] = 0xFF;
-		printf("\rWriting Chunk %d...", cwrt);
+	  for ( j = 0; j < WR_CHNK_SIZE; j++) chunk[j] = 0xFF; // Init
+
+	  	printf("\rWriting Chunk %d...", cwrt);
 		fflush(stdout);
 		seqToByteArray(hexdat, &chunk[0], base, WR_CHNK_SIZE);
-	
+		
+
 		if (!echo('N', 'C'))
 		  return;
 
@@ -470,7 +508,10 @@ void writeHex( datSeq_t* hexdat)
 		  printf("\nChunk write failed.\n");
 		  break;
 		  }
-		
+	     
+		//		printf("%cwrt @ 0x%08x: ",cwrt, base);
+		//	for ( j = 0; j < WR_CHNK_SIZE; j++) printf("%02x", chunk[j]);
+		//	printf("\n\n");
 		
 		cwrt++;
 		base += WR_CHNK_SIZE;
@@ -478,14 +519,14 @@ void writeHex( datSeq_t* hexdat)
 	       	while (base > hexdat[i].baseAdr + hexdat[i].length  && hexdat[i].length > 0)
 		  {
 		    i++;
-		    base = hexdat[i].baseAdr < base ? base : hexdat[i].baseAdr;
+		    base = hexdat[i].baseAdr < base ? base : (hexdat[i].baseAdr & 0xFFFFFFE0); // align
 		  }
 	}
 	printf("\n%d chunk(s) written.\n", cwrt);
 	printf("Sending write stop...");
-	if (!echo('W', 'S'))
-	    printf("Failed.\n");
-	else
+		if (!echo('W', 'S'))
+	  printf("Failed.\n");
+		else
 	   printf("Confirmed.\n");
 
 	return;
@@ -504,9 +545,15 @@ void dump(const char* path, unsigned char blockNo)
 		return;
 	}
 
-	unsigned char* dat = malloc(blockSize);
+	int fullDump = (blockNo == 'F');
+	int fullCount = 0;
 
-	if (!picDumpBlock(dat, blockNo))
+
+	unsigned char* dat = malloc(blockSize);
+do
+  {
+
+    if (!picDumpBlock(dat, fullDump ? fullCount : blockNo))
 	{
 		printf("Dumping failed.\n");
 		free(dat);
@@ -519,8 +566,12 @@ void dump(const char* path, unsigned char blockNo)
 		printf("Done.\n");
 	else
 		printf("Failed.\n");
+	fullCount++;
+  }
+ while (fullDump && fullCount < 4);
 
 	free(dat);
+fclose(outf);
 	return;
 }
 

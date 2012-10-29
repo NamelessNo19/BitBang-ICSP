@@ -123,7 +123,7 @@ int picDumpBlock(unsigned char* blkData, unsigned char blockNo)
 	  serWrite("AC", 2);
 	  printf("\rReceiving block data... %d%%", (pgNo * 100) / 255);
 	}
-
+	serRead(&buf[0], 3, TRUE);
 	printf("\n");
 	return TRUE;
 }
