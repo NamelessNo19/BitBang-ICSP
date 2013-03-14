@@ -2,22 +2,32 @@
 #define clkLO digitalWrite(pinPGC, LOW);
 #define datIN pinMode(pinPGD, INPUT)
 #define datOUT pinMode(pinPGD, OUTPUT);
+
+#ifdef __RASPI__
+#define del delayMicroseconds(clkDel)
+#elif
 #define del delayMicroseconds(10)
+#endif
 
 #define DEVID 0x1200
 
+#ifndef __RASPI__
 #include <inttypes.h>
 #include "PIC18Fconst.h"
+#endif 
 
 int cntr;
 
-
 int pgmEnable()
 {
+
+#ifndef __RASPI__
   if (!digitalRead(pinVSense))
     return false;
     
   digitalWrite(pinMCLR, LOW);
+#endif 
+ 
   digitalWrite(pinPGD, LOW);
   digitalWrite(pinPGM, LOW);
   digitalWrite(pinPGC, LOW);
@@ -25,7 +35,16 @@ int pgmEnable()
   del; del;
   digitalWrite(pinPGM, HIGH);
   delayMicroseconds(DELAY_P15);
+  
+#ifndef __RASPI__  
   digitalWrite(pinMCLR, HIGH);
+#elif
+  printf("\n-> Power Vpp now...");
+  fflush(stdout);
+  sleep(3);
+  printf(" GO!\n");
+#endif
+  
   delayMicroseconds(DELAY_P12);
   datOUT;
   
@@ -37,7 +56,14 @@ void pwrOffTarget()
   clkLO;
   datIN;
   del;
+#ifndef __RASPI__  
   digitalWrite(pinMCLR, LOW);
+#elif
+  printf("\n-> Disconnect Vpp now...");
+  fflush(stdout);
+  sleep(3);
+  printf(" Finished!\n");
+#endif
   del;
   digitalWrite(pinPGM, LOW);
   del;
@@ -81,8 +107,6 @@ void cmdOut(const uint8_t cmd, const uint16_t dat)
   }
   
 }
-
-
 
 uint8_t cmdIn(uint8_t cmd, uint8_t dat)
 {

@@ -1,6 +1,9 @@
 #ifndef __PIC18FCONSTANTS__
 #define __PIC18FCONSTANTS__
 
+
+#ifndef __RASPI__ 	// AVR Style
+
 // Input Commands
 #define CMD_IN_SOTBAT B0010 		// Shift Out TABLAT Register
 #define CMD_IN_TBRD B1000			// Table Read
@@ -14,6 +17,26 @@
 #define CMD_OUT_TBWR_POSI2 B1101	// Table Write, Post-Increment by 2
 #define CMD_OUT_TBWR_SP_POSI2 B1110 // Table Write, Start Programming, Post-Increment by 2
 #define CMD_OUT_TBWR_SP B1111		// Table Write, Start Programming
+
+#elif			// GCC Style
+
+// Input Commands
+#define CMD_IN_SOTBAT 0B0010 		// Shift Out TABLAT Register
+#define CMD_IN_TBRD 0B1000			// Table Read
+#define CMD_IN_TBRD_POSI 0B1001		// Table Read, Post-Increment
+#define CMD_IN_TBRD_POSD 0B1010		// Table Read, Post-Decrement
+#define CMD_IN_TBRD_PREI 0B1011		// Table Read, Pre-Increment
+
+// Output Commands
+#define CMD_OUT_CI 0B0000			// Core Instruction
+#define CMD_OUT_TBWR 0B1100			// Table Write
+#define CMD_OUT_TBWR_POSI2 0B1101	// Table Write, Post-Increment by 2
+#define CMD_OUT_TBWR_SP_POSI2 0B1110 // Table Write, Start Programming, Post-Increment by 2
+#define CMD_OUT_TBWR_SP 0B1111		// Table Write, Start Programming
+
+#endif
+
+
 
 // Memory Locations
 
@@ -69,7 +92,6 @@
 #define DELAY_P13 1
 #define DELAY_P14 1
 #define DELAY_P15 2
-
 
 
 #endif
