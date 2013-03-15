@@ -1,9 +1,9 @@
 *.o
 *.so
-ICSP
 *.~*
 *.*~
 picicsp
 atticsp
+__pycache__
 *.bin
 *.conf
