@@ -4,6 +4,7 @@
 #include <wiringPi.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "PIC18Fconst.h"
 
@@ -13,7 +14,7 @@
 
 #define del delayMicroseconds(clkDel)
 
-unsigned int clkDel;
+volatile unsigned long clkDel;
 
 int pgmEnable();
 void pwrOffTarget();
@@ -31,3 +32,32 @@ inline void performRowErase();
 void writeTest();
 void bulkErase(const uint16_t erOpt);
 void writeConfig (const uint32_t confReg, const uint8_t conf);
+
+int initialize(unsigned long cdel)
+{	
+	clkDel = cdel;
+	if (wiringPiSetup () == -1)
+		return 1 ;	
+	return 0;
+}
+
+void setClockDelay(unsigned long cdel)
+{
+	clkDel = cdel;
+}
+
+// Clock benchmark
+unsigned long clkBench()
+{
+	struct timeval  tvst, tve;	
+	
+	int i;
+	gettimeofday(&tvst, NULL);
+	for (i = 0; i < 50; i++)
+	{
+		clkLO; clkHI; del; clkLO; del;
+	}
+	gettimeofday(&tve, NULL);	
+	const unsigned long tdif = ((tve.tv_sec - tvst.tv_sec) * 1000000 + (tve.tv_usec - tvst.tv_usec)) / 50;	
+	return 1000000 / tdif; 
+}

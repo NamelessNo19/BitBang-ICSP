@@ -11,8 +11,8 @@ LIBS = wiringPi
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $< -o $(OUT) -D $(DEFINES) -l$(LIBS)
-	$(CC) -shared -o $(TARGET) $(OUT)
+	$(CC) $(CFLAGS) $< -o $(OUT) -D $(DEFINES)
+	$(CC) -shared -o $(TARGET) $(OUT) -l$(LIBS)
 	rm ./$(OUT)
 	mv  -f ./$(TARGET) ../../lib/$(TARGET)
 	

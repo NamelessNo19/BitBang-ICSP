@@ -1,10 +1,9 @@
+#define DEVID 0x1200
+
 #define clkHI digitalWrite(pinPGC, HIGH);
 #define clkLO digitalWrite(pinPGC, LOW);
 #define datIN pinMode(pinPGD, INPUT)
 #define datOUT pinMode(pinPGD, OUTPUT);
-
-
-#define DEVID 0x1200
 
 #ifndef __RASPI__
 #include <inttypes.h>
@@ -39,7 +38,7 @@ int pgmEnable()
 #else
   printf("\n-> Power Vpp now...");
   fflush(stdout);
-  sleep(3);
+  sleep(5);
   printf(" GO!\n");
 #endif
   
