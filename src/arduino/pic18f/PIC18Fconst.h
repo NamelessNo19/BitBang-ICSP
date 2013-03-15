@@ -2,23 +2,7 @@
 #define __PIC18FCONSTANTS__
 
 
-#ifndef __RASPI__ 	// AVR Style
-
-// Input Commands
-#define CMD_IN_SOTBAT B0010 		// Shift Out TABLAT Register
-#define CMD_IN_TBRD B1000			// Table Read
-#define CMD_IN_TBRD_POSI B1001		// Table Read, Post-Increment
-#define CMD_IN_TBRD_POSD B1010		// Table Read, Post-Decrement
-#define CMD_IN_TBRD_PREI B1011		// Table Read, Pre-Increment
-
-// Output Commands
-#define CMD_OUT_CI B0000			// Core Instruction
-#define CMD_OUT_TBWR B1100			// Table Write
-#define CMD_OUT_TBWR_POSI2 B1101	// Table Write, Post-Increment by 2
-#define CMD_OUT_TBWR_SP_POSI2 B1110 // Table Write, Start Programming, Post-Increment by 2
-#define CMD_OUT_TBWR_SP B1111		// Table Write, Start Programming
-
-#elif			// GCC Style
+#ifdef __RASPI__ 	// GCC Style
 
 // Input Commands
 #define CMD_IN_SOTBAT 0B0010 		// Shift Out TABLAT Register
@@ -33,6 +17,22 @@
 #define CMD_OUT_TBWR_POSI2 0B1101	// Table Write, Post-Increment by 2
 #define CMD_OUT_TBWR_SP_POSI2 0B1110 // Table Write, Start Programming, Post-Increment by 2
 #define CMD_OUT_TBWR_SP 0B1111		// Table Write, Start Programming
+
+#else			// AVR Style
+
+// Input Commands
+#define CMD_IN_SOTBAT B0010 		// Shift Out TABLAT Register
+#define CMD_IN_TBRD B1000			// Table Read
+#define CMD_IN_TBRD_POSI B1001		// Table Read, Post-Increment
+#define CMD_IN_TBRD_POSD B1010		// Table Read, Post-Decrement
+#define CMD_IN_TBRD_PREI B1011		// Table Read, Pre-Increment
+
+// Output Commands
+#define CMD_OUT_CI B0000			// Core Instruction
+#define CMD_OUT_TBWR B1100			// Table Write
+#define CMD_OUT_TBWR_POSI2 B1101	// Table Write, Post-Increment by 2
+#define CMD_OUT_TBWR_SP_POSI2 B1110 // Table Write, Start Programming, Post-Increment by 2
+#define CMD_OUT_TBWR_SP B1111		// Table Write, Start Programming
 
 #endif
 

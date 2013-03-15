@@ -3,17 +3,15 @@
 #define datIN pinMode(pinPGD, INPUT)
 #define datOUT pinMode(pinPGD, OUTPUT);
 
-#ifdef __RASPI__
-#define del delayMicroseconds(clkDel)
-#elif
-#define del delayMicroseconds(10)
-#endif
 
 #define DEVID 0x1200
 
 #ifndef __RASPI__
 #include <inttypes.h>
 #include "PIC18Fconst.h"
+#define del delayMicroseconds(10)
+#else
+#include "PICTools.h"
 #endif 
 
 int cntr;
@@ -38,7 +36,7 @@ int pgmEnable()
   
 #ifndef __RASPI__  
   digitalWrite(pinMCLR, HIGH);
-#elif
+#else
   printf("\n-> Power Vpp now...");
   fflush(stdout);
   sleep(3);
@@ -58,7 +56,7 @@ void pwrOffTarget()
   del;
 #ifndef __RASPI__  
   digitalWrite(pinMCLR, LOW);
-#elif
+#else
   printf("\n-> Disconnect Vpp now...");
   fflush(stdout);
   sleep(3);
@@ -187,7 +185,11 @@ void clkFlashWrite()
   
 }
 
+#ifdef __RASPI__
+void setTablePtr8(const uint8_t up, const uint8_t high, const uint8_t low)
+#else
 void setTablePtr(const uint8_t up, const uint8_t high, const uint8_t low)
+#endif
 {
   cmdOut(CMD_OUT_CI, 0x0E00 | up);
   cmdOut(CMD_OUT_CI, 0x6EF8);
@@ -247,7 +249,6 @@ inline void performRowErase()
 	cmdOut(CMD_OUT_CI, 0x82A6);  // BSF  EECON1, WR
 	clkFlashWrite();
 }
-
 
 void writeTest()
 {
