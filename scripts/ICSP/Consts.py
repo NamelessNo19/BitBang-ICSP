@@ -44,3 +44,5 @@ class Pic18f4550(Pic18f4xxx):
     DEV_ID                  = 0x1200
     MAX_CODE_ADR            = 0x007FFF
     
+TargetList = [Pic18f4550]
+    

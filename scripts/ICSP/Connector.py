@@ -82,14 +82,14 @@ class Pic18fICSP(object):
     def readDataWord(self, adress):
         if not self.checkState():
             return None
-       if adress > Pic18f4550.MAX_CODE_ADR or adress < 0
+        if (adress > Pic18f4550.MAX_CODE_ADR) or (adress < 0):
             return 0
         return self.lib.readWord(adress)
     
     def getTargetName(self):
         if self.targetId == 0:
             return "[Not Connected]"
-        for dev in [Pic18f4550]:
+        for dev in TargetList:
             if dev.DEV_ID == self.targetId:
                 return dev.NAME
         return "Unknown Device"
