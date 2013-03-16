@@ -1,7 +1,7 @@
 BitBang-ICSP
 ============
 
-An **experimental** ICSP software using the Arduino (**NEW:** Raspberry Pi) platform.
+An **experimental** ICSP software using the Arduino ( **NEW:** Raspberry Pi) platform.
 
 Do not use!
 -----------
@@ -27,5 +27,10 @@ I know. But that's no question.
 ##### How do I use this?
 Like I said before: __Don't.__ Otherwise you might blow up your MCU / Arduino / Raspberry Pi / home.
 
+##### I don't care. Can I wire the PIC directly to my Arduino / Raspberry Pi?
+ * __Arduino__ : Maybe. I still highly recommend using some kind of overcurrent protection. Especially the Vpp-Pin migth draw more power than the Arduino can supply.
+ * __Raspberry Pi__ : No, the Raspberry Pi GPIO interface operates at 3.3V, the PIC requires 5V. You need at least one bidirectional level converter and three
+ unidirectional 3.3V -> 5V level converters.
+
 ##### Are you in any way affiliated to Microchip Technology Inc. or Atmel Corporation?
-Not at all. I'm just using their products.
+Not at all.
