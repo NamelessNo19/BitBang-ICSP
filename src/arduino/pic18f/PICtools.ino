@@ -15,7 +15,7 @@
 
 int cntr;
 
-int pgmEnable()
+uint16_t pgmEnable()
 {
 
 #ifndef __RASPI__
@@ -36,16 +36,21 @@ int pgmEnable()
 #ifndef __RASPI__  
   digitalWrite(pinMCLR, HIGH);
 #else
-  printf("\n-> Power Vpp now...");
+  printf("-> Power Vpp now...");
   fflush(stdout);
   sleep(5);
-  printf(" GO!\n");
+  printf(" Go!\n");
 #endif
   
   delayMicroseconds(DELAY_P12);
   datOUT;
+  uint16_t devId = readWord(MEM_DEVID1) & 0xFFE0;
   
-  return (readWord(MEM_DEVID1) & 0xFFE0) == DEVID;
+#ifndef __RASPI__
+  return (devId == DEV_ID);
+#else
+  return (devId != 0xFFE0) ? devId : 0;
+#endif
 }
 
 void pwrOffTarget()

@@ -16,7 +16,7 @@
 
 volatile unsigned long clkDel;
 
-int pgmEnable();
+uint16_t pgmEnable();
 void pwrOffTarget();
 void cmdOut(const uint8_t cmd, const uint16_t dat);
 uint8_t cmdIn(uint8_t cmd, uint8_t dat);
