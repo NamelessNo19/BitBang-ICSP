@@ -32,6 +32,7 @@ inline void performRowErase();
 void writeTest();
 void bulkErase(const uint16_t erOpt);
 void writeConfig (const uint32_t confReg, const uint8_t conf);
+uint16_t readFlashSeq (uint8_t *buf, const uint32_t adr, const uint16_t len);
 
 int initialize(unsigned long cdel)
 {	

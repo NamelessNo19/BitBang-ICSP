@@ -45,8 +45,16 @@ class Pic18fICSP(object):
         if not self.initialized:
             raise NotInitializedError
             return None
+        elif self.targetEnabled:
+            print("Cannot perform clock benchmark  while connected!")
         else:
             return self.lib.clkBench()
+        
+    def setClockTarget(self, tClock):
+        if not self.initialized:
+            raise NotInitializedError
+        else:
+            self.lib.setClockDelay(max(500000 // (tClock + 1), 2))
         
     def start(self):
         if not self.initialized:
@@ -86,6 +94,15 @@ class Pic18fICSP(object):
             return 0
         return self.lib.readWord(adress)
     
+    def readFlash(self, adress, length):
+        if not self.checkState():
+            return None
+        buf = create_string_buffer(length)
+        rdlen = self.lib.readFlashSeq(buf, adress, length);
+        if (rdlen != length):
+            print("WARN: Only %d bytes read." % rdlen)
+        return buf.raw
+                
     def getTargetName(self):
         if self.targetId == 0:
             return "[Not Connected]"

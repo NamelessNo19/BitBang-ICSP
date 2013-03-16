@@ -315,3 +315,23 @@ void writeConfig (const uint32_t confReg, const uint8_t conf)
  clkFlashWrite(); 
   
 }
+
+#ifdef __RASPI__
+uint16_t readFlashSeq (uint8_t *buf, const uint32_t adr, const uint16_t len)
+{
+
+	if (adr > 0x7FFF || len == 0)
+		return 0;
+	
+	uint32_t endAdr = adr + len;
+	if (endAdr > 0x7FFF)
+		endAdr = 0x7FFF;
+	
+	uint16_t i;
+	setTablePtr(adr);
+	for (i = 0; i + adr < endAdr; i++)
+		buf[i] = cmdIn(CMD_IN_TBRD_POSI, 0);
+		
+	return i;
+}
+#endif
