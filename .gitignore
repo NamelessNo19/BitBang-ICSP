@@ -7,3 +7,4 @@ atticsp
 __pycache__
 *.bin
 *.conf
+~*.*

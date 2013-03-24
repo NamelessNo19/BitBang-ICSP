@@ -2,6 +2,8 @@
 
 from ctypes import *
 from ICSP.Consts import *
+from distutils.util import strtobool
+from sys import stdin
 import os
 
 class Error(Exception):
@@ -129,7 +131,8 @@ class Pic18fICSP(object):
     def writeFlashRow(self, adr, dat):
         if not self.checkState():
             return None
-        adr = adr & self.device.MAX_CODE_ADR & (0xFFFFFFFF << self.device.ROW_LENGTH_EXP)
+        if adr >= 0:
+            adr = adr & self.device.MAX_CODE_ADR & (0xFFFFFFFF << self.device.ROW_READ_LENGTH_EXP)
         buf = bytearray(dat)
         if not len(buf) > 0:
             print ("Nothing written.")
@@ -137,26 +140,72 @@ class Pic18fICSP(object):
             
         if len(buf) % 2 == 1:
             buf.append(0xFF)
-           
-        self.lib.setAccessToFlash()
-        self.lib.setTablePtr(adr)
-        maxSize = 1 << self.device.ROW_LENGTH_EXP 
+        
+        if adr >= 0:   
+            self.lib.setAccessToFlash()
+            self.lib.setTablePtr(adr)
+            
+        maxSize = 1 << self.device.ROW_READ_LENGTH_EXP 
         for i in range(0, (len(buf) // 2) - 1):
             if i * 2 > maxSize - 4:
                 break
-            self.lib.cmdOut(self.device.CMD_OUT_TBWR_POSI2, buf[2*i] + (buf[2*i + 1] << 8))  
+            self.lib.cmdOut(self.device.CMD_OUT_TBWR_SP_POSI2, buf[2*i] + (buf[2*i + 1] << 8))  
         self.lib.cmdOut(self.device.CMD_OUT_TBWR_SP, buf[-2] + (buf[-1] << 8))
-        self.lib.clkFlashWrite()     
+        self.lib.clkFlashWrite()
         
+    
+    def eraseFlashRow(self, adr):
+        if not self.checkState():
+            return None
+        adr = adr & self.device.MAX_CODE_ADR & (0xFFFFFFFF << self.device.ROW_ERASE_LENGTH_EXP)
+        self.lib.setAccessToFlash()
+        self.lib.enableWrite()
+        self.lib.setTablePtr(adr)
+        self.lib.performRowErase(adr)   
+        self.lib.disableWrite()
+          
+    def eraseBlock(self, index, force = False):
+        if not self.checkState():
+            return None
         
+        if index < 0 or index > self.device.MAX_BLOCK_INDEX:
+            raise ValueError("Invalid block index %d." % index)
+            return
+        
+        if not force:
+            print ("Erase block %d? [Y/N]: " % index)
+            if not strtobool(stdin.readline().strip()):
+                print("Aborted.")
+                return
+        eropt = 0
+        if index == 0:
+            eropt = self.device.BLKER_CEP_B0
+        elif index == 1:
+            eropt = self.device.BLKER_CEP_B1
+        elif index == 2:
+            eropt = self.device.BLKER_CEP_B2
+        elif index == 3:
+            eropt = self.device.BLKER_CEP_B3
+        elif index == 4:
+            eropt = self.device.BLKER_CEP_B4
+        elif index == 5:
+            eropt = self.device.BLKER_CEP_B5
+            
+        self.lib.bulkErase(eropt)
+        
+    def eraseChip(self, force = False):
+        if not self.checkState():
+            return None
+ 
+        if not force:
+            print ("Do you really want to erase all of the target's memory: ")
+            if not strtobool(stdin.readline().strip()):
+                print("Aborted.")
+                return
+                       
+        self.lib.bulkErase(self.device.BLKER_CE)
          
           
-              
-        
-
-        
-                          
-
 # Testing       
 if __name__ == '__main__':
     pic = Pic18fICSP()
