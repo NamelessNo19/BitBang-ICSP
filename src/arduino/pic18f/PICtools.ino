@@ -21,29 +21,20 @@ uint16_t pgmEnable()
 #ifndef __RASPI__
   if (!digitalRead(pinVSense))
     return false;
-    
+#endif
+
+  datOUT;    
   digitalWrite(pinMCLR, LOW);
-#endif 
- 
   digitalWrite(pinPGD, LOW);
   digitalWrite(pinPGM, LOW);
   digitalWrite(pinPGC, LOW);
-  datIN;
-  del; del;
+  del; del; del;
   digitalWrite(pinPGM, HIGH);
   delayMicroseconds(DELAY_P15);
   
-#ifndef __RASPI__  
   digitalWrite(pinMCLR, HIGH);
-#else
-  printf("-> Power Vpp now...");
-  fflush(stdout);
-  sleep(5);
-  printf(" Go!\n");
-#endif
   
   delayMicroseconds(DELAY_P12);
-  datOUT;
   uint16_t devId = readWord(MEM_DEVID1) & 0xFFE0;
   
 #ifndef __RASPI__
@@ -58,14 +49,7 @@ void pwrOffTarget()
   clkLO;
   datIN;
   del;
-#ifndef __RASPI__  
   digitalWrite(pinMCLR, LOW);
-#else
-  printf("\n-> Disconnect Vpp now...");
-  fflush(stdout);
-  sleep(3);
-  printf(" Finished!\n");
-#endif
   del;
   digitalWrite(pinPGM, LOW);
   del;

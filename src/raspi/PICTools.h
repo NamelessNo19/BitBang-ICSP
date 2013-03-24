@@ -11,6 +11,7 @@
 #define pinPGC 6
 #define pinPGD 5
 #define pinPGM 4
+#define pinMCLR 3
 
 #define del delayMicroseconds(clkDel)
 
@@ -38,7 +39,17 @@ int initialize(unsigned long cdel)
 {	
 	clkDel = cdel;
 	if (wiringPiSetup () == -1)
-		return 1 ;	
+		return 1 ;
+
+	pinMode(pinPGC, OUTPUT);
+	pinMode(pinPGM, OUTPUT);
+	pinMode(pinPGD, OUTPUT);
+	pinMode(pinMCLR, OUTPUT);
+
+	digitalWrite(pinMCLR, LOW);
+	digitalWrite(pinPGM, LOW);
+	digitalWrite(pinPGC, LOW);
+	digitalWrite(pinPGD, LOW);	
 	return 0;
 }
 
