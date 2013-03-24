@@ -41,6 +41,11 @@ class Pic18fICSP(object):
         else:
             print("PIC18F Library initialized.")
             self.initialized = True
+    
+    def __del__(self):
+        if self.targetEnabled:
+            self.disconnect()
+        
             
     def getClock(self):
         if not self.initialized:
