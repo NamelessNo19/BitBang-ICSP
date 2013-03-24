@@ -43,6 +43,13 @@ class Pic18f4550(Pic18f4xxx):
     NAME                    = "PIC18F4550"
     DEV_ID                  = 0x1200
     MAX_CODE_ADR            = 0x007FFF
+    ROW_LENGTH_EXP          = 5
+    
+class UnknownPic(Pic18fBase):
+    NAME                    = "Unknown Target"
+    DEV_ID                  = 0x0
+    MAX_CODE_ADR            = 0xFFFFFFFF
+    ROW_LENGTH_EXP          = 0
     
 TargetList = [Pic18f4550]
     

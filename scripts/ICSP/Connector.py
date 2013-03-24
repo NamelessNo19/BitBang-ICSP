@@ -25,6 +25,7 @@ class Pic18fICSP(object):
         self.initlialized = False
         self.targetEnabled = False;
         self.targetId = 0
+        self.device = None;
         if os.geteuid() != 0:
             print ("You need root privileges to access GPIO-Interface. Sorry.")
             return
@@ -64,9 +65,12 @@ class Pic18fICSP(object):
             self.targetId = self.lib.pgmEnable()
             if self.targetId != 0:
                 print("ICSP connection established.")
-                self.targetEnabled = True 
+                self.targetEnabled = True
+                self.device = self.getTarget()
+                
             else:
                 print("ICSP connection failed.")
+                self.stop()
                 
     def stop(self):
         if not self.initialized:
@@ -90,7 +94,7 @@ class Pic18fICSP(object):
     def readDataWord(self, adress):
         if not self.checkState():
             return None
-        if (adress > Pic18f4550.MAX_CODE_ADR) or (adress < 0):
+        if (adress > self.device.MAX_CODE_ADR) or (adress < 0):
             return 0
         return self.lib.readWord(adress)
     
@@ -102,14 +106,48 @@ class Pic18fICSP(object):
         if (rdlen != length):
             print("WARN: Only %d bytes read." % rdlen)
         return buf.raw
-                
-    def getTargetName(self):
+    
+    def getTarget(self):
         if self.targetId == 0:
-            return "[Not Connected]"
+            return None
         for dev in TargetList:
             if dev.DEV_ID == self.targetId:
-                return dev.NAME
-        return "Unknown Device"
+                return dev
+        return UnknownPic
+                
+    def getTargetName(self):
+        if self.device == None:
+            return "[Not Connected]"
+        else:
+           return self.device.NAME
+    
+    def writeFlashRow(self, adr, dat):
+        if not self.checkState():
+            return None
+        adr = adr & self.device.MAX_CODE_ADR & (0xFFFFFFFF << self.device.ROW_LENGTH_EXP)
+        buf = bytearray(dat)
+        if not len(buf) > 0:
+            print ("Nothing written.")
+            return None
+            
+        if len(buf) % 2 == 1:
+            buf.append(0xFF)
+           
+        self.lib.setAccessToFlash()
+        self.lib.setTablePtr(adr)
+        maxSize = 1 << self.device.ROW_LENGTH_EXP 
+        for i in range(0, (len(buf) // 2) - 1):
+            if i * 2 > maxSize - 4:
+                break
+            self.lib.cmdOut(self.device.CMD_OUT_TBWR_POSI2, buf[2*i] + (buf[2*i + 1] << 8))  
+        self.lib.cmdOut(self.device.CMD_OUT_TBWR_SP, buf[-2] + (buf[-1] << 8))
+        self.lib.clkFlashWrite()     
+        
+        
+         
+          
+              
+        
 
         
                           
