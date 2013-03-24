@@ -57,7 +57,7 @@ class Pic18fICSP(object):
         else:
             self.lib.setClockDelay(max(500000 // (tClock + 1), 2))
         
-    def start(self):
+    def connect(self):
         if not self.initialized:
             raise NotInitializedError
             return None
@@ -70,9 +70,9 @@ class Pic18fICSP(object):
                 
             else:
                 print("ICSP connection failed.")
-                self.stop()
+                self.disconnect()
                 
-    def stop(self):
+    def disconnect(self):
         if not self.initialized:
             raise NotInitializedError
             return None
