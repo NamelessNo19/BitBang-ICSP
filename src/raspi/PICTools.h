@@ -49,7 +49,18 @@ int initialize(unsigned long cdel)
 	digitalWrite(pinMCLR, LOW);
 	digitalWrite(pinPGM, LOW);
 	digitalWrite(pinPGC, LOW);
-	digitalWrite(pinPGD, LOW);	
+	digitalWrite(pinPGD, LOW);
+
+	
+	del; del; del;
+	digitalWrite(pinPGM, HIGH);
+	del; del; del;
+	digitalWrite(pinMCLR, HIGH);
+	del; del; del;
+	digitalWrite(pinMCLR, LOW);
+	del;
+	digitalWrite(pinPGM, LOW);
+
 	return 0;
 }
 
