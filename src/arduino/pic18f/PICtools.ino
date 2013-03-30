@@ -308,8 +308,8 @@ uint16_t readFlashSeq (uint8_t *buf, const uint32_t adr, const uint16_t len)
 		return 0;
 	
 	uint32_t endAdr = adr + len;
-	if (endAdr > 0x7FFF)
-		endAdr = 0x7FFF;
+	if (endAdr > 0x8000)
+		endAdr = 0x8000;
 	
 	uint16_t i;
 	setTablePtr(adr);
