@@ -47,6 +47,7 @@ class Pic18f4550(Pic18f4xxx):
     ROW_READ_LENGTH_EXP     = 5
     ROW_ERASE_LENGTH_EXP    = 6
     MAX_BLOCK_INDEX         = 3
+    HAS_DATA_EEPROM         = True
     
 class UnknownPic(Pic18fBase):
     NAME                    = "Unknown Target"
@@ -56,6 +57,7 @@ class UnknownPic(Pic18fBase):
     ROW_READ_LENGTH_EXP     = 0
     ROW_ERASE_LENGTH_EXP    = 0
     MAX_BLOCK_INDEX         = 5
+    HAS_DATA_EEPROM         = False
     
 TargetList = [Pic18f4550]
     

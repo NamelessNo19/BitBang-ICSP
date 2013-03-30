@@ -7,9 +7,12 @@ from math import floor
 import shlex
 
 
-class TtySizeError(Exception):
+class DialogError(Exception):
+    def __init__(self, dlgErr = "Unknown"):
+        self.dlgErr = dlgErr
+    
     def __str__(self):
-        return ("Terminal too small for dialog.")
+        return ("Call to dialog failed: " + self.dlgErr)
 
 class Dlg(object):
     @staticmethod
@@ -28,8 +31,11 @@ class Dlg(object):
         for s in msgArgs:
             callString += " " + s
 
+       # print("-> ", callString)
+
         proc = subprocess.Popen(callString, shell=True, stderr=subprocess.PIPE, 
                                 stdin=subprocess.PIPE if pipeStdin else None )
+        
         return proc
     
     def __init__(self):
@@ -37,12 +43,12 @@ class Dlg(object):
             print("WARNING: Cannot find dialog in /usr/bin/.")
        
         self.backtitle = None
-        self.minWidth = 1
-            
+        self.minWidth = 15
+        self.defaultNo = False   
         self.resize()
         
         if self.termHeight < 15 or self.termWidth < 31:
-            raise TtySizeError
+            raise DialogError("Terminal too small.")
         
         self.gaugeProc = None
         self.gaugeText = None
@@ -59,15 +65,23 @@ class Dlg(object):
         if self.backtitle != None:
             tmpList.append("--backtitle \"" + self.backtitle + "\"")
             
+        if self.defaultNo:
+            tmpList.append("--defaultno")
+            
         return tmpList
         
     def dialog(self, message, type, width = 0, height = 0, heightpad = 3, widthpad = 4, comArgs=[], msgArgs = []):
+             
         if width <= 0:
-            width = len(message)       
+            width = len(message)  
+                    
         width = min(self.termWidth - widthpad , width) 
         width = max(self.minWidth, width)
-        height = min(height, self.termHeight - heightpad)      
-        if len(message) > width:
+        height = min(height, self.termHeight - heightpad)  
+        
+        if len(message) < width:
+            message = message.center(width)    
+        elif len(message) > width:
             message = fill(message, width, replace_whitespace=False)  
         if height <= 0:
             height = message.count('\n')
@@ -99,10 +113,84 @@ class Dlg(object):
         self.minWidth = backMinWd
         if len(menuSel) > 0:
             if menuSel[0] == '\n':
-                raise TtySizeError
-            return eval(menuSel) - 1
+                raise DialogError(menuSel)
+            return int(menuSel) - 1
         else:
             return None
+        
+    def radioList(self, message, elements, defaultList = []):
+        mList = [str(len(elements))]
+        i = 1
+        backMinWd = self.minWidth
+        
+        for el in elements:
+            default = (i <= len(defaultList) and defaultList[i - 1])  
+            mList.append(str(i) + " \"" + el + "\" " + ("on" if default else "off"))
+            if len(el) > self.minWidth:
+                self.minWidth = len(el)
+            i += 1
+            
+        proc = self.dialog(message, "radiolist", msgArgs = mList, heightpad = 8 + len(elements), widthpad = 15)
+        menuSel = proc.communicate()[1].decode()
+        self.minWidth = backMinWd
+        if len(menuSel) > 0:
+            if menuSel[0] == '\n':
+                raise DialogError(menuSel)
+            return int(menuSel) - 1
+        else:
+            return None
+        
+    def checkList(self, message, elements, defaultList = []):
+        mList = [str(len(elements))]
+        i = 1
+        backMinWd = self.minWidth
+        
+        for el in elements:
+            default = (i <= len(defaultList) and defaultList[i - 1])  
+            mList.append(str(i) + " \"" + el + "\" " + ("on" if default else "off"))
+            if len(el) > self.minWidth:
+                self.minWidth = len(el)
+            i += 1
+            
+        proc = self.dialog(message, "checklist", msgArgs = mList, heightpad = 8 + len(elements), widthpad = 15)
+        menuSel = proc.communicate()[1].decode()
+        self.minWidth = backMinWd
+        if len(menuSel) > 0:
+            if menuSel[0] == '\n':
+                raise DialogError(menuSel)
+            menuSel = menuSel.split()
+            menuSel = list(map(lambda s: int(s.replace('\"', '')) - 1, menuSel))
+            return menuSel
+        else:
+            return None
+        
+    def yesNo(self, message):
+        proc = self.dialog(message, "yesno", heightpad = 5)
+        err = proc.communicate()[1]
+        ret = proc.returncode
+        if len(err) > 0:
+            raise DialogError(err)
+        else:
+           if ret == 0:
+               return True
+           elif ret == 1:
+               return False
+           else:
+               return None
+    
+    def pause(self, message, timeout):
+        proc = self.dialog(message, "pause", heightpad = 8, msgArgs=[str(timeout)])
+        err = proc.communicate()[1]
+        ret = proc.returncode
+        if len(err) > 0:
+            raise DialogError
+        else:
+           if ret == 0:
+               return True
+           elif ret == 1:
+               return False
+           else:
+               return None
         
     def fselect(self, path = "/"):
         
@@ -114,7 +202,7 @@ class Dlg(object):
         outPath = proc.communicate()[1].decode()
         if len(outPath) > 0:
             if outPath[0] == '\n':
-                raise TtySizeError
+                raise DialogError(outPath)
             return outPath
         else:
             return None
@@ -126,7 +214,7 @@ class Dlg(object):
         input = proc.communicate()[1].decode()
         if len(input) > 0:
             if input[0] == '\n':
-                raise TtySizeError
+                raise DialogError(input)
             return input
         else:
             return None
