@@ -3,44 +3,117 @@
 from DialogUtil import Dlg        
 from time import sleep
 from ICSP.Connector import Pic18fICSP;
+from math import ceil
 import os.path
 
-menuOptions = ["Dump to file", "Quit"]
 
-def dmpToFile():
+def dumpMenu():
+    menuOptions = ["Full code memory", "Code memory sequence", "Back"]
+    sel = dlg.menu("What do you want to dump?", menuOptions)
+    
+    if sel == 0:
+        fullDumpToFile()
+    elif sel == 1:
+        dumpSequence()
+    else:
+        return
+      
+
+def queryOutputFile():
     pathOk = False
     while not pathOk:
         path = dlg.fselect("/home/")
         if path == None:
-            return    
+            return None  
         
         if os.path.isdir(path) or os.path.isfile(path):
             dlg.msgBox("File already exists or invalid path.")
         else:
             try:
                 file = open(path, "wb")
-                pathOk = True
             except IOError as e:
                 dlg.msgBox("IOError:\n" + str(e))
+            else:
+                return file
     
 
-    
+def fullDumpToFile():
+    file = queryOutputFile()    
+    if file == None:
+        return
+      
     chnkSize = 128
     chnkCount = pic.getTarget().BLOCK_SIZE * (pic.getTarget().MAX_BLOCK_INDEX + 1) // chnkSize
     
-    dlg.createGauge("Dumping " + str(chnkSize * chnkCount) + " Bytes to " + path, 65)
+    dlg.createGauge("Dumping " + str(chnkSize * chnkCount) + " Bytes to " + file.name)
     
-    for i in range(0, chnkCount):
+    for i in range(chnkCount):
         dlg.updateGauge((i * 100) // chnkCount)
         buf = pic.readFlash(i * chnkSize, chnkSize)
         file.write(buf)
-
-        
-    
+           
     dlg.closeGauge()
     file.close()
     dlg.msgBox("Dumping finished.")
+    
+
+def dumpSequence():
+    startAdr = -1
+    endAdr = -1
+    # Query start address
+    while True:
+        input = dlg.inputBox("Please enter the start address (0 - %d):" %  pic.getTarget().MAX_CODE_ADR, "0x")
+        if input == None:
+            return
+        try:
+            startAdr = eval(input)
+        except SyntaxError:
+            startAdr = -1
+           
+        if startAdr < 0 or startAdr > pic.getTarget().MAX_CODE_ADR:
+            dlg.msgBox("Invalid address.")
+        else:
+            break
         
+    # Query end address
+    while True:
+        input = dlg.inputBox("Please enter the end address (%d - %d):" %  (startAdr, pic.getTarget().MAX_CODE_ADR), "0x")
+        if input == None:
+            return
+        try:
+            endAdr = eval(input)
+        except SyntaxError:
+            endAdr = -1
+            
+        if endAdr < startAdr or endAdr > pic.getTarget().MAX_CODE_ADR:
+            dlg.msgBox("Invalid address.")
+        else:
+            break
+        
+    file = queryOutputFile()    
+    if file == None:
+        return
+    
+    chnkSize = 64
+    chnkCount = ceil((endAdr - startAdr + 1) / chnkSize)
+     
+    
+    dlg.createGauge("Dumping " + str(endAdr - startAdr + 1) + " Bytes to " + file.name)
+    
+    for i in range(chnkCount):
+        dlg.updateGauge((i * 100) // chnkCount)
+        buf = pic.readFlash(i * chnkSize + startAdr, chnkSize if i != chnkCount - 1 else (endAdr - startAdr + 1) % chnkSize)
+        file.write(buf)
+           
+    dlg.closeGauge()
+    file.close()
+    dlg.msgBox("Dumping finished.")
+    
+    
+        
+        
+                      
+            
     
         
 if __name__ == '__main__':
@@ -67,13 +140,11 @@ if __name__ == '__main__':
     dlg.backtitle = "BitBang-ICSP"
     dlg.infoBox("Use at your own risk!", 1)
     quit = False
-    
+    menuOptions = ["Dump Memory", "Quit"]
     while not quit:
-        sel = dlg.menu("Connected to " + pic.getTargetName() + ".", menuOptions)
-    
-        # Dump to file
+        sel = dlg.menu("Connected to " + pic.getTargetName() + ".", menuOptions)   
         if sel == 0:
-            dmpToFile()
+            dumpMenu()
         else:
             quit = True
              

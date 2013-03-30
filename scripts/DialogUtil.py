@@ -118,13 +118,25 @@ class Dlg(object):
             return outPath
         else:
             return None
+        
+    def inputBox(self, message, init = ""):
+        width = max(floor(self.termWidth * 0.8) - 15, 0)
+        proc = self.dialog(message, "inputbox", width, heightpad = 8, msgArgs = [init])
+        
+        input = proc.communicate()[1].decode()
+        if len(input) > 0:
+            if input[0] == '\n':
+                raise TtySizeError
+            return input
+        else:
+            return None
     
     def createGauge(self, message, width = 0):
         
-        if not width >= 0:
-            width = floor(self.termWidth * 0.6) 
+        if not width > 0:
+            width = max(floor(self.termWidth * 0.6) , self.minWidth)
              
-        self.gaugeProc = Dlg.callDialog(message, "gauge", width, 5, 0, 6,
+        self.gaugeProc = Dlg.callDialog(message, "gauge", width, 6, 0, 6,
                                          self.defArgs(), [], True)
         self.gaugeText = message
     
