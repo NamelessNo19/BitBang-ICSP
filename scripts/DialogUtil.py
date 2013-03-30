@@ -1,9 +1,15 @@
 from os.path import isfile
+from os import popen
 import subprocess
 from textwrap import fill
 from time import sleep
+from math import floor
 import shlex
 
+
+class TtySizeError(Exception):
+    def __str__(self):
+        return ("Terminal too small for dialog.")
 
 class Dlg(object):
     @staticmethod
@@ -32,9 +38,20 @@ class Dlg(object):
        
         self.backtitle = None
         self.minWidth = 1
-        self.maxWidth = 40
+            
+        self.resize()
+        
+        if self.termHeight < 15 or self.termWidth < 31:
+            raise TtySizeError
+        
         self.gaugeProc = None
         self.gaugeText = None
+        
+    def resize(self):
+        termSize = popen("stty size", "r").read().split()
+        self.termHeight = eval(termSize[0])
+        self.termWidth = eval(termSize[1])
+
         
     def defArgs(self):
         tmpList = ["--cr-wrap"]
@@ -47,8 +64,9 @@ class Dlg(object):
     def dialog(self, message, type, width = 0, height = 0, heightpad = 3, widthpad = 4, comArgs=[], msgArgs = []):
         if width <= 0:
             width = len(message)       
-        width = min(self.maxWidth, width) 
-        width = max(self.minWidth, width)      
+        width = min(self.termWidth - widthpad , width) 
+        width = max(self.minWidth, width)
+        height = min(height, self.termHeight - heightpad)      
         if len(message) > width:
             message = fill(message, width, replace_whitespace=False)  
         if height <= 0:
@@ -80,20 +98,33 @@ class Dlg(object):
         menuSel = proc.communicate()[1].decode()
         self.minWidth = backMinWd
         if len(menuSel) > 0:
+            if menuSel[0] == '\n':
+                raise TtySizeError
             return eval(menuSel) - 1
         else:
             return None
         
-    def fselect(self, path = "/", width = 50, height = 8):
-        proc = self.dialog(path, "fselect", width, height, 10, 10)
+    def fselect(self, path = "/"):
+        
+        #proc = Dlg.dialog(path, "fselect", max(floor(self.termWidth * 0.6), 15) , max(floor(self.termHeight * 0.6), 31) , 0, 0)
+        width = max(floor(self.termWidth * 0.6) - 15, 0)
+        height = max(floor(self.termHeight * 0.8) - 15, 0)
+        
+        proc = Dlg.callDialog(path, "fselect", width, height, 0, 0, self.defArgs(), [], False)
         outPath = proc.communicate()[1].decode()
         if len(outPath) > 0:
+            if outPath[0] == '\n':
+                raise TtySizeError
             return outPath
         else:
             return None
     
-    def createGauge(self, message, width):
-        self.gaugeProc = Dlg.callDialog(message, "gauge", width, 6, 0, 6,
+    def createGauge(self, message, width = 0):
+        
+        if not width >= 0:
+            width = floor(self.termWidth * 0.6) 
+             
+        self.gaugeProc = Dlg.callDialog(message, "gauge", width, 5, 0, 6,
                                          self.defArgs(), [], True)
         self.gaugeText = message
     
