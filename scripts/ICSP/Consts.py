@@ -43,6 +43,7 @@ class Pic18f4550(Pic18f4xxx):
     NAME                    = "PIC18F4550"
     DEV_ID                  = 0x1200
     MAX_CODE_ADR            = 0x007FFF
+    BLOCK_SIZE              = 8192
     ROW_READ_LENGTH_EXP     = 5
     ROW_ERASE_LENGTH_EXP    = 6
     MAX_BLOCK_INDEX         = 3
@@ -51,6 +52,7 @@ class UnknownPic(Pic18fBase):
     NAME                    = "Unknown Target"
     DEV_ID                  = 0x0
     MAX_CODE_ADR            = 0xFFFFFFFF
+    BLOCK_SIZE              = 8192
     ROW_READ_LENGTH_EXP     = 0
     ROW_ERASE_LENGTH_EXP    = 0
     MAX_BLOCK_INDEX         = 5

@@ -24,7 +24,7 @@ class NotConnectedError(Error):
 class Pic18fICSP(object):
     
     def __init__(self):
-        self.initlialized = False
+        self.initialized = False
         self.targetEnabled = False;
         self.targetId = 0
         self.device = None;
@@ -67,17 +67,19 @@ class Pic18fICSP(object):
     def connect(self):
         if not self.initialized:
             raise NotInitializedError
-            return None
+            return False
         else:
             self.targetId = self.lib.pgmEnable()
             if self.targetId != 0:
                 print("ICSP connection established.")
                 self.targetEnabled = True
                 self.device = self.getTarget()
+                return True
                 
             else:
                 print("ICSP connection failed.")
                 self.disconnect()
+                return False
                 
     def disconnect(self):
         if not self.initialized:
@@ -111,7 +113,7 @@ class Pic18fICSP(object):
         buf = create_string_buffer(length)
         rdlen = self.lib.readFlashSeq(buf, adress, length);
         if (rdlen != length):
-            print("WARN: Only %d bytes read." % rdlen)
+            print("WARN: Only %d bytes read at %s." % (rdlen, hex(adress)))
         return buf.raw
     
     def getTarget(self):
