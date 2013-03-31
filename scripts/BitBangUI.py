@@ -6,6 +6,19 @@ from ICSP.Connector import Pic18fICSP;
 from math import ceil
 import os.path
 
+class PicConfig(object):
+    def __init__(self, target):
+        self.optList = target.CONFIG_VALS
+        self.optVals = []
+        for opt in self.optList:
+            self.optVals.append(opt.default)
+     
+    @staticmethod       
+    def getOptValDesc(opt, val):
+        for vDesc, vVal in opt.values:
+            if val == vVal:
+                return vDesc
+        return "???"
 
 def dumpMenu():
     menuOptions = ["Full code memory", "Code memory sequence", "Back"]
@@ -17,6 +30,27 @@ def dumpMenu():
         dumpSequence()
     else:
         return
+    
+def clockSet():
+    while True:
+        input = dlg.inputBox("Enter the clock target (Hz):", "20000")
+        
+        if input == None:
+            return
+        
+        clk = -1
+        try:
+            clk = int(input)
+        except ValueError:
+            clk = -1
+                
+        if clk <= 0:
+            dlg.msgBox("Invalid clock.")
+        else:
+            break
+        
+    pic.setClockTarget(clk)
+    
       
 
 def queryOutputFile():
@@ -110,10 +144,50 @@ def dumpSequence():
     dlg.msgBox("Dumping finished.")
     
     
-        
-        
-                      
+def configMenu():
+    while True:
+        cmMenOptions = ["Edit", "Load from Hex file", "Load from target", "Restore defaults", "Write to Hex file", "Write to target", "Back"]
+        sel = dlg.menu("Target Configuration", cmMenOptions)
+        if sel == 0:
+            confEditMenu()
+        else:
+            return
+
+
             
+ 
+def confEditMenu():
+    dlg.noCancel = True
+    while True:
+        ceMenOptions = []
+        backWd = dlg.minWidth
+        dlg.minWidth = 30
+        for cOpt, cVal in zip(conf.optList, conf.optVals):
+            ceMenOptions.append(cOpt.name + " \t= " + PicConfig.getOptValDesc(cOpt, cVal))
+        ceMenOptions.append("Back")
+     
+        sel = dlg.menu("Select Option", ceMenOptions)
+        dlg.minWidth = backWd
+        
+        if sel == None or sel >= len(ceMenOptions) - 1:
+            dlg.noCancel = False
+            return
+        else:
+            valList = conf.optList[sel].values
+            cevalMenList = []
+            for ceval in valList:
+                cevalMenList.append(ceval[0])
+            dlg.noCancel = False
+            valSel = dlg.menu(conf.optList[sel].desc, cevalMenList)
+            dlg.noCancel = True
+            
+            if valSel != None:
+                conf.optVals[sel] = valList[valSel][1]
+                
+     
+            
+                      
+ # ----- MAIN -----           
     
         
 if __name__ == '__main__':
@@ -134,17 +208,26 @@ if __name__ == '__main__':
         exit()
     
     print("Connected to: " + pic.getTargetName())
+    conf = PicConfig(pic.getTarget())
     print("Starting UI ...")
     
     dlg = Dlg()
     dlg.backtitle = "BitBang-ICSP"
     dlg.infoBox("Use at your own risk!", 1)
     quit = False
-    menuOptions = ["Dump Memory", "Quit"]
+    mainMenuOptions = ["Dump Memory", "Write Memory", "Erase Memory", "Configuration Editor" ,"Set Clock", "Quit"]
     while not quit:
-        sel = dlg.menu("Connected to " + pic.getTargetName() + ".", menuOptions)   
+        sel = dlg.menu("Connected to " + pic.getTargetName() + ".", mainMenuOptions)   
         if sel == 0:
             dumpMenu()
+        elif sel == 1:
+            dlg.msgBox("Not implemented. :-(")
+        elif sel == 2:
+            dlg.msgBox("Not implemented. :-(")
+        elif sel == 3:
+            configMenu()
+        elif sel == 4:
+            clockSet()
         else:
             quit = True
              

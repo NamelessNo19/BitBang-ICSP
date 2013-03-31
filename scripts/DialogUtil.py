@@ -45,6 +45,7 @@ class Dlg(object):
         self.backtitle = None
         self.minWidth = 15
         self.defaultNo = False   
+        self.noCancel = False
         self.resize()
         
         if self.termHeight < 15 or self.termWidth < 31:
@@ -63,10 +64,11 @@ class Dlg(object):
         tmpList = ["--cr-wrap"]
         
         if self.backtitle != None:
-            tmpList.append("--backtitle \"" + self.backtitle + "\"")
-            
+            tmpList.append("--backtitle \"" + self.backtitle + "\"")       
         if self.defaultNo:
             tmpList.append("--defaultno")
+        if self.noCancel:
+            tmpList.append("--nocancel")
             
         return tmpList
         
