@@ -163,7 +163,7 @@ def confEditMenu():
         backWd = dlg.minWidth
         dlg.minWidth = 30
         for cOpt, cVal in zip(conf.optList, conf.optVals):
-            ceMenOptions.append(cOpt.name + " \t= " + PicConfig.getOptValDesc(cOpt, cVal))
+            ceMenOptions.append(cOpt.name + "\t= " + PicConfig.getOptValDesc(cOpt, cVal))
         ceMenOptions.append("Back")
      
         sel = dlg.menu("Select Option", ceMenOptions)

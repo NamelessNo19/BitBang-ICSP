@@ -110,7 +110,8 @@ class Dlg(object):
                 self.minWidth = len(el)
             i += 1
             
-        proc = self.dialog(message, "menu", msgArgs = mList, heightpad = 8 + len(elements), widthpad = 9)
+        proc = self.dialog(message, "menu", msgArgs = mList,
+                            heightpad = min(8 + len(elements), floor(self.termHeight * 0.8)), widthpad = 9)
         menuSel = proc.communicate()[1].decode()
         self.minWidth = backMinWd
         if len(menuSel) > 0:
