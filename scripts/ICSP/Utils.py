@@ -14,6 +14,9 @@ class PicConfig(object):
     def __init__(self, target):
         self.target = target
         self.optList = target.CONFIG_VALS
+        self.loadDefaults()
+            
+    def loadDefaults(self):
         self.optVals = []
         for opt in self.optList:
             self.optVals.append(opt.default)

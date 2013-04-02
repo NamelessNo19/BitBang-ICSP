@@ -141,6 +141,9 @@ def configMenu():
         elif sel == 2:
             conf.fromBinaryDict(pic.readConfiguration())
             dlg.msgBox("Configuration loaded.")
+        elif sel == 3:
+            conf.loadDefaults()
+            dlg.msgBox("Restored default configuration.")
         elif sel == 4:
             dlg.infoBox("Writing configuration to target...")
             pic.writeConfiguration(conf.toBinaryDict())
