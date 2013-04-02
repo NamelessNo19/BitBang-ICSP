@@ -206,6 +206,29 @@ class Pic18fICSP(object):
                 return
                        
         self.lib.bulkErase(self.device.BLKER_CE)
+        
+    def readConfiguration(self):
+        if not self.checkState():
+            return None
+        
+        dict = {}
+        for cReg in self.device.CONFIG_REG_ADRS:
+            regAdr = self.device.CONFIG_REG_ADRS[cReg]
+            self.lib.setTablePtr(regAdr)
+            dict[regAdr] = self.lib.readByte()
+            
+        return dict
+    
+    def writeConfiguration(self, confDict):
+        if not self.checkState():
+            return None
+            
+        for cReg in self.device.CONFIG_REG_ADRS:
+            regAdr = self.device.CONFIG_REG_ADRS[cReg]
+            if not regAdr in confDict:
+                continue     
+            self.lib.writeConfig(regAdr, confDict[regAdr])
+        
          
           
 # Testing       

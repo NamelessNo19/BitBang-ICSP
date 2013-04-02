@@ -138,6 +138,13 @@ def configMenu():
         sel = dlg.menu("Target Configuration", cmMenOptions)
         if sel == 0:
             confEditMenu()
+        elif sel == 2:
+            conf.fromBinaryDict(pic.readConfiguration())
+            dlg.msgBox("Configuration loaded.")
+        elif sel == 5:
+            dlg.infoBox("Writing configuration to target...")
+            pic.writeConfiguration(conf.toBinaryDict())
+            dlg.msgBox("Configuration written to target.")
         else:
             return
 
@@ -160,16 +167,19 @@ def confEditMenu():
             dlg.noCancel = False
             return
         else:
-            valList = conf.optList[sel].values
-            cevalMenList = []
-            for ceval in valList:
-                cevalMenList.append(ceval[0])
-            dlg.noCancel = False
-            valSel = dlg.menu(conf.optList[sel].desc, cevalMenList)
-            dlg.noCancel = True
+            if conf.optList[sel] in pic.getTarget().RD_ONLY_CONF:
+                dlg.msgBox("This value cannot be changed.")
+            else:
+                valList = conf.optList[sel].values
+                cevalMenList = []
+                for ceval in valList:
+                    cevalMenList.append(ceval[0])
+                dlg.noCancel = False
+                valSel = dlg.menu(conf.optList[sel].desc, cevalMenList)
+                dlg.noCancel = True
             
-            if valSel != None:
-                conf.optVals[sel] = valList[valSel][1]
+                if valSel != None:
+                    conf.optVals[sel] = valList[valSel][1]
                 
      
             

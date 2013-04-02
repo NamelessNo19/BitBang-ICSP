@@ -263,6 +263,8 @@ class Pic18f4xxx(Pic18fBase):
                     CFG_WRT0, CFG_WRT1, CFG_WRT2, CFG_WRT3, CFG_WRTC, CFG_WRTB, CFG_WRTD,
                     CFG_EBTR0, CFG_EBTR1, CFG_EBTR2, CFG_EBTR3, CFG_EBTRB]
     
+    RD_ONLY_CONF = [CFG_LVP, CFG_ICPRT]
+    
 
 class Pic18f4550(Pic18f4xxx):
     NAME                    = "PIC18F4550"
