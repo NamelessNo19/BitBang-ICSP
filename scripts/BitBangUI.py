@@ -4,21 +4,9 @@ from DialogUtil import Dlg
 from time import sleep
 from ICSP.Connector import Pic18fICSP;
 from math import ceil
+from ICSP.Utils import PicConfig
 import os.path
 
-class PicConfig(object):
-    def __init__(self, target):
-        self.optList = target.CONFIG_VALS
-        self.optVals = []
-        for opt in self.optList:
-            self.optVals.append(opt.default)
-     
-    @staticmethod       
-    def getOptValDesc(opt, val):
-        for vDesc, vVal in opt.values:
-            if val == vVal:
-                return vDesc
-        return "???"
 
 def dumpMenu():
     menuOptions = ["Full code memory", "Code memory sequence", "Back"]
@@ -152,7 +140,6 @@ def configMenu():
             confEditMenu()
         else:
             return
-
 
             
  
