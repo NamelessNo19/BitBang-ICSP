@@ -146,17 +146,17 @@ class Pic18f4xxx(Pic18fBase):
     
     CFG_LVP    =  ConfigValue("LVP", "MEM_CONFIG4L", 
                                 [("Disabled", 0), ("Enabled", 1)],
-                                 1, 1, 1,
+                                 2, 1, 1,
                                  "Single-Supply ICSP")
     
     CFG_ICPRT  =  ConfigValue("ICPRT", "MEM_CONFIG4L", 
                                 [("Disabled", 0), ("Enabled", 1)],
-                                 2, 1, 0,
+                                 5, 1, 0,
                                  "ICPORT")
     
     CFG_XINST   = ConfigValue("XINST", "MEM_CONFIG4L", 
                                 [("Disabled", 0), ("Enabled", 1)],
-                                 5, 1, 0,
+                                 6, 1, 0,
                                  "Extended Instruction Set")
     
     CFG_DEBUG   = ConfigValue("DEBUG", "MEM_CONFIG4L", 
