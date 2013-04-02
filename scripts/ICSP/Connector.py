@@ -166,21 +166,18 @@ class Pic18fICSP(object):
         self.lib.performRowErase(adr)   
         self.lib.disableWrite()
           
-    def eraseBlock(self, index, force = False):
+    def eraseBlock(self, index):
         if not self.checkState():
             return None
         
-        if index < 0 or index > self.device.MAX_BLOCK_INDEX:
+        if index < -1 or index > self.device.MAX_BLOCK_INDEX:
             raise ValueError("Invalid block index %d." % index)
             return
         
-        if not force:
-            print ("Erase block %d? [Y/N]: " % index)
-            if not strtobool(stdin.readline().strip()):
-                print("Aborted.")
-                return
         eropt = 0
-        if index == 0:
+        if index == -1:
+            eropt = self.device.BLKER_CEP_BB
+        elif index == 0:
             eropt = self.device.BLKER_CEP_B0
         elif index == 1:
             eropt = self.device.BLKER_CEP_B1
@@ -195,17 +192,20 @@ class Pic18fICSP(object):
             
         self.lib.bulkErase(eropt)
         
-    def eraseChip(self, force = False):
+    def eraseChip(self):
         if not self.checkState():
-            return None
- 
-        if not force:
-            print ("Do you really want to erase all of the target's memory: ")
-            if not strtobool(stdin.readline().strip()):
-                print("Aborted.")
-                return
-                       
+            return None                       
         self.lib.bulkErase(self.device.BLKER_CE)
+        
+    def eraseDataEEPROM(self):
+        if not self.checkState():
+            return None                       
+        self.lib.bulkErase(self.device.BLKER_DEP)
+        
+    def eraseConfiguration(self):
+        if not self.checkState():
+            return None                       
+        self.lib.bulkErase(self.device.BLKER_CB)
         
     def readConfiguration(self):
         if not self.checkState():

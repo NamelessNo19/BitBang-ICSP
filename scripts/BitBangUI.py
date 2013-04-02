@@ -134,14 +134,14 @@ def dumpSequence():
     
 def configMenu():
     while True:
-        cmMenOptions = ["Edit", "Load from Hex file", "Load from target", "Restore defaults", "Write to Hex file", "Write to target", "Back"]
+        cmMenOptions = ["Edit", "Load from Hex file", "Load from target", "Restore defaults", "Write to target", "Back"]
         sel = dlg.menu("Target Configuration", cmMenOptions)
         if sel == 0:
             confEditMenu()
         elif sel == 2:
             conf.fromBinaryDict(pic.readConfiguration())
             dlg.msgBox("Configuration loaded.")
-        elif sel == 5:
+        elif sel == 4:
             dlg.infoBox("Writing configuration to target...")
             pic.writeConfiguration(conf.toBinaryDict())
             dlg.msgBox("Configuration written to target.")
@@ -180,7 +180,41 @@ def confEditMenu():
             
                 if valSel != None:
                     conf.optVals[sel] = valList[valSel][1]
-                
+                    
+def eraseMenu():
+    erMenOptions = ["Chip Erase", "Erase Code Memory", "Erase Data EEPROM", "Erase Configuration", "Back"]
+    
+    while True:
+        sel = dlg.menu("Select an erase option", erMenOptions)
+        dlg.defaultNo = True
+        
+        if sel == 0:
+            if dlg.yesNo("Do you really want to perform a Chip Erase?"):
+                pic.eraseChip()
+                dlg.msgBox("Chip Erase complete.")
+        elif sel == 1:
+            blockList = ["Boot Block"]
+            for i in range(pic.getTarget().MAX_BLOCK_INDEX + 1):
+                blockList.append("Block " + str(i))
+            blockSel = dlg.checkList("Select the blocks to erase", blockList)
+            if blockSel != None and len(blockSel) > 0 and dlg.yesNo("Do you really want to erase the selected blocks?"):
+                for blk in blockSel:
+                    pic.eraseBlock(blk - 1)
+                dlg.msgBox("Code Memory Erase complete.")
+        elif sel == 2:
+            if not pic.getTarget().HAS_DATA_EEPROM:
+                dlg.msgBox("No Data EEPROM present on target.")
+            elif dlg.yesNo("Do you really want to erase the Data EEPROM?"):
+                pic.eraseDataEEPROM()
+                dlg.msgBox("Data EEPROM Erase complete.")
+        elif sel == 3:
+            if dlg.yesNo("Do you really want to erase the configuration registers?"):
+                pic.eraseConfiguration()
+                dlg.msgBox("Configuration Erase complete.")       
+        else:
+            return 
+    
+        dlg.defaultNo = False    
      
             
                       
@@ -220,7 +254,7 @@ if __name__ == '__main__':
         elif sel == 1:
             dlg.msgBox("Not implemented. :-(")
         elif sel == 2:
-            dlg.msgBox("Not implemented. :-(")
+            eraseMenu()
         elif sel == 3:
             configMenu()
         elif sel == 4:
