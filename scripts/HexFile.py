@@ -49,12 +49,13 @@ class HexFile(object):
     Parses an Intel HexFile to binary data.
     '''
 
-    def __init__(self, fPath, bytesPerChunk = 4):
+    def __init__(self, fPath, bytesPerChunk = 4, padByte = 0xFF):
         '''
         Constructor
         '''
         self.chunkSize = bytesPerChunk
         self.chunks= {}
+        self.pad = padByte
         try:
             self.file = open(fPath, 'r')
         except IOError:
@@ -156,28 +157,20 @@ class HexFile(object):
             print("Line: %d, Adr: %s, Offset: %s, Len: %d" % (lineNo, hex(chunkAdr), hex(offset), len(data)))
             raise
             
-        
-        newChunk = (1 << 8 * self.chunkSize) - 1
-        
-        for b in data:
-            newChunk <<= 8
-            newChunk += b
+        newChunk = bytearray([self.pad] * self.chunkSize)
+        newChunk[offset:offset + len(data)] = data
 
-        newChunk <<= offset * 8
-        newChunk |= (1 << offset * 8) - 1   
-        newChunk &= (1 << 8 * self.chunkSize) - 1
-        
         if chunkAdr in self.chunks:
-            # Update existing Chunk
-            bitMask = (1 << (8 * len(data))) - 1
-            bitMask <<= offset * 8
-            tmpChunk = self.chunks[chunkAdr]
-            if tmpChunk & bitMask != bitMask:
-                raise FormatError(self.name, lineNo, "Multiple assignment of location 0x%0.8X ." % (chunkAdr + offset))
-            else:
-                newChunk &= tmpChunk
-        
-        self.chunks.update({chunkAdr : newChunk})
+            i = offset
+            tmpChunk = bytearray(self.chunks[chunkAdr])
+            for i in range(offset, offset + len(data)):
+                if tmpChunk[i] == self.pad:
+                    tmpChunk[i] = newChunk[i]
+                elif tmpChunk[i] != newChunk[i]:
+                    raise FormatError(self.name, lineNo, "Multiple assignment of location 0x%0.8X ." % (chunkAdr + offset))
+            newChunk = tmpChunk
+                    
+        self.chunks.update({chunkAdr : bytes(newChunk)})
         
 # Testing       
 if __name__ == '__main__':
@@ -188,7 +181,7 @@ if __name__ == '__main__':
         print(fe)
     else:
         for key in hf.chunks:
-            print("0x%0.8X: 0x%0.8x" % (key, hf.chunks[key]))
+            print("0x%0.8X: " % key, hf.chunks[key])
             
             
         
