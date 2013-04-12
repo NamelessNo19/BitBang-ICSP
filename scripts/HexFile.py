@@ -12,6 +12,14 @@ class InputError(Error):
         
     def __str__(self):
         return "Unable to open %s for reading." % self.fPath
+    
+class FileFormatError(Error):
+    """Exception raised when input in not a Hex File."""
+    def __init__(self, fPath):
+        self.fPath = fPath
+        
+    def __str__(self):
+        return "%s is not a valid Hex File." % self.fPath
 
 class FormatError(Error):
     """Exception raised when file content does not match hex file formatting"""
@@ -54,8 +62,12 @@ class HexFile(object):
             raise InputError(fPath)
         else:
             self.name = path.basename(fPath)
-            self._parseFile()
-            self.file.close()
+            try:
+                self._parseFile()
+            except UnicodeDecodeError:
+                raise FileFormatError(fPath)
+            finally:
+                self.file.close()
             
     def _parseFile(self):
         lineNo = 1
@@ -77,7 +89,7 @@ class HexFile(object):
                 break
             lineNo += 1
         else:
-          raise FormatError(self.name, lineNo, 'Unexpected end of file.')  
+            raise FormatError(self.name, lineNo, 'Unexpected end of file.')  
                 
     
     def _parseLine(self, data, lineNo): 
@@ -90,24 +102,24 @@ class HexFile(object):
         # Parsing
         size = data[0]
         base = data[1] * 256 + data[2]
-        type = data[3]
+        lineType = data[3]
         
         if size != len(data) - 5:
             raise FormatError(self.name, lineNo, "Given size does not match actual length.") 
         
-        if type == 0:
+        if lineType == 0:
             # Data Record
             self._addSegment(base, data[4:-1], lineNo)
-        elif type == 1:
+        elif lineType == 1:
             # EOF
             return False
-        elif type == 2:
+        elif lineType == 2:
             # Extended Segment Address Record
             if size != 2:
                 raise FormatError(self.name, lineNo, 'Length of ESAR does not equal 2.') 
             else:
                 self.curBaseAdr = (self.curBaseAdr & 0xFFFF0000) | (data[4] * 256 + data[5])
-        elif type == 4:
+        elif lineType == 4:
             # Extended Linear Address Record
             if size != 2:
                 raise FormatError(self.name, lineNo, 'Length of ELAR does not equal 2.') 
@@ -123,9 +135,11 @@ class HexFile(object):
         adr = base + self.curBaseAdr
         offset = adr % self.chunkSize
         adr -= offset
-        pos = 4 - offset
-        self._updateChunk(adr, offset, data[0:pos], lineNo)
-        adr += pos
+        pos = self.chunkSize - offset
+        
+        if pos != 0:
+            self._updateChunk(adr, offset, data[0:pos], lineNo)
+            adr += self.chunkSize
         
         while pos < len(data):
             btw = min(len(data) - pos, self.chunkSize)
@@ -135,18 +149,23 @@ class HexFile(object):
         
     
     def _updateChunk(self, chunkAdr, offset, data, lineNo):
-        assert offset + len(data) <= self.chunkSize
-        assert chunkAdr % self.chunkSize == 0
+        try:
+            assert offset + len(data) <= self.chunkSize
+            assert chunkAdr % self.chunkSize == 0
+        except AssertionError:
+            print("Line: %d, Adr: %s, Offset: %s, Len: %d" % (lineNo, hex(chunkAdr), hex(offset), len(data)))
+            raise
+            
         
-        newChunk = (1 << (8 * self.chunkSize) - 1)
+        newChunk = (1 << 8 * self.chunkSize) - 1
         
         for b in data:
             newChunk <<= 8
             newChunk += b
 
         newChunk <<= offset * 8
-        newChunk | (1 << offset * 8) - 1   
-        newChunk &= 0xFFFFFFFF
+        newChunk |= (1 << offset * 8) - 1   
+        newChunk &= (1 << 8 * self.chunkSize) - 1
         
         if chunkAdr in self.chunks:
             # Update existing Chunk
@@ -154,23 +173,23 @@ class HexFile(object):
             bitMask <<= offset * 8
             tmpChunk = self.chunks[chunkAdr]
             if tmpChunk & bitMask != bitMask:
-                raise FormatError(self.name, lineNo, "Memory at 0x%0.8X reassigned." % (chunkAdr + offset))
+                raise FormatError(self.name, lineNo, "Multiple assignment of location 0x%0.8X ." % (chunkAdr + offset))
             else:
                 newChunk &= tmpChunk
         
         self.chunks.update({chunkAdr : newChunk})
-            
-         
+        
 # Testing       
 if __name__ == '__main__':
     print('Go.')
     try:
-        hf = HexFile('D:\\test.hex')
+        hf = HexFile('D:\\blink.hex')
     except FormatError as fe:
         print(fe)
     else:
         for key in hf.chunks:
             print("0x%0.8X: 0x%0.8x" % (key, hf.chunks[key]))
+            
             
         
         

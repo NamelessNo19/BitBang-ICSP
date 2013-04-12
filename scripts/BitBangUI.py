@@ -5,6 +5,7 @@ from time import sleep
 from ICSP.Connector import Pic18fICSP;
 from math import ceil
 from ICSP.Utils import PicConfig
+import ICSP.HexFile
 import os.path
 
 
@@ -218,6 +219,23 @@ def eraseMenu():
             return 
     
         dlg.defaultNo = False    
+        
+        
+def writeHex():
+    while True:
+        fpath = dlg.fselect("/home/")
+        if fpath == None:
+            return
+        
+        try:
+            hf = HexFile.HexFile(path)
+        except HexFile.error as e:
+            dlg.msgBox("Parsing Hex File failed: \n" + str(e))
+            continue
+        
+        return
+        
+        
      
             
                       
@@ -249,13 +267,13 @@ if __name__ == '__main__':
     dlg.backtitle = "BitBang-ICSP"
     dlg.infoBox("Use at your own risk!", 1)
     quit = False
-    mainMenuOptions = ["Dump Memory", "Write Memory", "Erase Memory", "Configuration Editor" ,"Set Clock", "Quit"]
+    mainMenuOptions = ["Dump Memory", "Write Hex File", "Erase Memory", "Configuration Editor" ,"Set Clock", "Quit"]
     while not quit:
         sel = dlg.menu("Connected to " + pic.getTargetName() + ".", mainMenuOptions)   
         if sel == 0:
             dumpMenu()
         elif sel == 1:
-            dlg.msgBox("Not implemented. :-(")
+            writeHex()
         elif sel == 2:
             eraseMenu()
         elif sel == 3:
