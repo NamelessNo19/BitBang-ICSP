@@ -39,7 +39,6 @@ class PicConfig(object):
             
             
     def fromBinaryDict(self, binDict):
-
         for i in range(len(self.optList)):
             opt = self.optList[i]
             regAdr = self.target.CONFIG_REG_ADRS[opt.register]
@@ -48,6 +47,21 @@ class PicConfig(object):
             
             mask = ((1 << opt.length) - 1) << opt.offset
             self.optVals[i] = binDict[regAdr] & mask
+            self.optVals[i] >>= opt.offset
+            
+    def fromHexFile(self, hexFile):
+        for i in range(len(self.optList)):
+            opt = self.optList[i]
+            regAdr = self.target.CONFIG_REG_ADRS[opt.register]
+            offset = regAdr % hexFile.chunkSize
+            chnkAdr = regAdr - offset
+            if chnkAdr not in hexFile.chunks:
+                raise MissingConfigurationException(opt.register)
+            
+            regVal = hexFile.chunks[chnkAdr][offset]
+                                  
+            mask = ((1 << opt.length) - 1) << opt.offset
+            self.optVals[i] = regVal & mask
             self.optVals[i] >>= opt.offset
 
             

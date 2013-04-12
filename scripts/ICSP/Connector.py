@@ -134,7 +134,7 @@ class Pic18fICSP(object):
         if not self.checkState():
             return None
         if adr >= 0:
-            adr = adr & self.device.MAX_CODE_ADR & (0xFFFFFFFF << self.device.ROW_READ_LENGTH_EXP)
+            adr = adr & self.device.MAX_CODE_ADR & (0xFFFFFFFF << self.device.ROW_WRITE_LENGTH_EXP)
         buf = bytearray(dat)
         if not len(buf) > 0:
             print ("Nothing written.")
@@ -147,11 +147,12 @@ class Pic18fICSP(object):
             self.lib.setAccessToFlash()
             self.lib.setTablePtr(adr)
             
-        maxSize = 1 << self.device.ROW_READ_LENGTH_EXP 
+        maxSize = 1 << self.device.ROW_WRITE_LENGTH_EXP 
         for i in range(0, (len(buf) // 2) - 1):
             if i * 2 > maxSize - 4:
                 break
-            self.lib.cmdOut(self.device.CMD_OUT_TBWR_SP_POSI2, buf[2*i] + (buf[2*i + 1] << 8))  
+            self.lib.cmdOut(self.device.CMD_OUT_TBWR_POSI2, buf[2*i] + (buf[2*i + 1] << 8))  
+            
         self.lib.cmdOut(self.device.CMD_OUT_TBWR_SP, buf[-2] + (buf[-1] << 8))
         self.lib.clkFlashWrite()
         

@@ -271,7 +271,7 @@ class Pic18f4550(Pic18f4xxx):
     DEV_ID                  = 0x1200
     MAX_CODE_ADR            = 0x007FFF
     BLOCK_SIZE              = 8192
-    ROW_READ_LENGTH_EXP     = 5
+    ROW_WRITE_LENGTH_EXP     = 5
     ROW_ERASE_LENGTH_EXP    = 6
     MAX_BLOCK_INDEX         = 3
     HAS_DATA_EEPROM         = True

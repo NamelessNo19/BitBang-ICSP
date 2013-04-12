@@ -5,7 +5,7 @@ from time import sleep
 from ICSP.Connector import Pic18fICSP;
 from math import ceil
 from ICSP.Utils import PicConfig
-import ICSP.HexFile
+import HexFile
 import os.path
 
 
@@ -139,6 +139,11 @@ def configMenu():
         sel = dlg.menu("Target Configuration", cmMenOptions)
         if sel == 0:
             confEditMenu()
+        elif sel == 1:
+            hf = queryHexFile()
+            if hf != None:
+                conf.fromHexFile(hf)
+                dlg.msgBox("Configuration loaded.")
         elif sel == 2:
             conf.fromBinaryDict(pic.readConfiguration())
             dlg.msgBox("Configuration loaded.")
@@ -220,21 +225,92 @@ def eraseMenu():
     
         dlg.defaultNo = False    
         
-        
-def writeHex():
+def queryHexFile():
     while True:
         fpath = dlg.fselect("/home/")
         if fpath == None:
-            return
+            return None
         
         try:
-            hf = HexFile.HexFile(path)
-        except HexFile.error as e:
+            hf = HexFile.HexFile(fpath, 1 << pic.getTarget().ROW_WRITE_LENGTH_EXP)
+        except HexFile.Error as e:
             dlg.msgBox("Parsing Hex File failed: \n" + str(e))
-            continue
+        else:
+            return hf
         
+# Monster Function :/        
+def writeHex():
+    hf = queryHexFile()
+    
+    if hf == None:
         return
-        
+    
+    hxData = {codeAdr : hf.chunks[codeAdr] for codeAdr in hf.chunks if codeAdr < pic.getTarget().MAX_CODE_ADR }    
+    
+    title = str(len(hxData) * hf.chunkSize) + " Bytes parsed from Hex File."
+    hasConf = 0x300000 in hf.chunks
+    wrtOpts = ["Perform Chip Erase", "Write code memory", "Verify written memory"]
+    
+    if hasConf:
+        wrtOpts.append("Write Configuration")
+        wrtOpts.append("Verify Configuration")
+        hexCfg = PicConfig(pic.getTarget())
+        hexCfg.fromHexFile(hf)   
+     
+    dlg.defaultNo = True    
+    dlgSel = dlg.checkList(title, wrtOpts, [True] * 5)
+    dlg.defaultNo = False
+    
+    if dlgSel == None:
+        return
+    
+    performCE = 0 in dlgSel
+    writeCM = 1 in dlgSel
+    verCM = 2 in dlgSel
+    writeCFG = 3 in dlgSel
+    verCFG = 4 in dlgSel
+    
+    
+    datLen = len(hxData)
+    
+    if performCE: # Chip Erase
+        dlg.infoBox("Performing Chip Erase...")
+        pic.eraseChip()
+    if writeCM:  # Write Code Memory   
+        dlg.createGauge("Writing %d chunks to target..." % datLen)
+        cCount = 0
+        for chnkAdr, chnkDat in hxData.items():
+            pic.writeFlashRow(chnkAdr, chnkDat)
+            cCount += 1
+            dlg.updateGauge((cCount * 100) // datLen)
+        dlg.closeGauge()
+    if verCM:   # Verify Code Memory
+        dlg.createGauge("Verifying %d chunks..." % datLen)
+        cCount = 0
+        for chnkAdr, chnkDat in hxData.items():
+            readBack = pic.readFlash(chnkAdr, hf.chunkSize)
+                        
+            if readBack != chnkDat:
+                dlg.closeGauge()
+                msgString = "Verification failed at %s! Aborting" % hex(chnkAdr)
+                dlg.msgBox(msgString)
+                return
+            cCount += 1
+            dlg.updateGauge((cCount * 100) // datLen)
+        dlg.closeGauge()
+    if writeCFG: # Write Configuration
+        dlg.infoBox("Writing Configuration...")
+        pic.writeConfiguration(hexCfg.toBinaryDict())
+    if verCFG:  # Verify Configuration
+        rbCfg = pic.readConfiguration()
+        if rbCfg != hexCfg.toBinaryDict():
+            dlg.msgBox("Configuration mismatch!")
+            return
+    
+    dlg.msgBox("All operations completed.")
+    return
+
+ # ----- End Of writeHex ----       
         
      
             
