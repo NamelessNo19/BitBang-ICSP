@@ -172,6 +172,31 @@ class HexFile(object):
                     
         self.chunks.update({chunkAdr : bytes(newChunk)})
         
+    def read(self, offset, length, pad = True):
+        chunkOffset = offset % self.chunkSize
+        chunkBase = offset - chunkOffset
+
+        retBA = bytearray(length)
+        rdlen = 0            
+        while rdlen < length:
+            btr = min(length - rdlen, self.chunkSize - chunkOffset)
+            if chunkBase not in self.chunks:
+                if pad:
+                    retBA[rdlen : rdlen + btr] = bytearray([self.pad] * btr)
+                else:
+                    return None
+            else:
+                retBA[rdlen : rdlen + btr] = self.chunks[chunkBase][chunkOffset : chunkOffset + btr]
+            rdlen += btr
+            chunkBase += self.chunkSize
+            chunkOffset = 0
+        return bytes(retBA)
+            
+            
+        
+        
+        
+        
 # Testing       
 if __name__ == '__main__':
     print('Go.')

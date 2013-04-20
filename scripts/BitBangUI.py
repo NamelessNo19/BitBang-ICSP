@@ -4,7 +4,7 @@ from DialogUtil import Dlg
 from time import sleep
 from ICSP.Connector import Pic18fICSP;
 from math import ceil
-from ICSP.Utils import PicConfig
+from ICSP.Utils import *
 import HexFile
 import os.path
 
@@ -142,8 +142,12 @@ def configMenu():
         elif sel == 1:
             hf = queryHexFile()
             if hf != None:
-                conf.fromHexFile(hf)
-                dlg.msgBox("Configuration loaded.")
+                try:
+                    conf.fromHexFile(hf)
+                except MissingConfigurationException as mce:
+                   dlg.msgBox("Configuration Error: " + str(mce))
+                else:    
+                    dlg.msgBox("Configuration loaded.")
         elif sel == 2:
             conf.fromBinaryDict(pic.readConfiguration())
             dlg.msgBox("Configuration loaded.")
@@ -255,7 +259,11 @@ def writeHex():
         wrtOpts.append("Write Configuration")
         wrtOpts.append("Verify Configuration")
         hexCfg = PicConfig(pic.getTarget())
-        hexCfg.fromHexFile(hf)   
+        try:
+            hexCfg.fromHexFile(hf)
+        except MissingConfigurationException as mce:
+            dlg.msgBox("Configuration Error: " + str(mce))
+            return
      
     dlg.defaultNo = True    
     dlgSel = dlg.checkList(title, wrtOpts, [True] * 5)

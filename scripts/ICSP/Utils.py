@@ -7,7 +7,7 @@ class MissingConfigurationException(Error):
         self.reg = register
     
     def __str__(self):
-        "Missing configuration value for register " + register + "."
+        return "Missing configuration value for register " + self.reg + "."
 
 
 class PicConfig(object):
@@ -50,19 +50,15 @@ class PicConfig(object):
             self.optVals[i] >>= opt.offset
             
     def fromHexFile(self, hexFile):
-        for i in range(len(self.optList)):
-            opt = self.optList[i]
-            regAdr = self.target.CONFIG_REG_ADRS[opt.register]
-            offset = regAdr % hexFile.chunkSize
-            chnkAdr = regAdr - offset
-            if chnkAdr not in hexFile.chunks:
-                raise MissingConfigurationException(opt.register)
-            
-            regVal = hexFile.chunks[chnkAdr][offset]
-                                  
-            mask = ((1 << opt.length) - 1) << opt.offset
-            self.optVals[i] = regVal & mask
-            self.optVals[i] >>= opt.offset
+        cfgDict = {}
+        for regName, regAdr in self.target.CONFIG_REG_ADRS.items():
+            regVal = hexFile.read(regAdr, 1, pad = False)[0]
+            if regVal != None:
+                cfgDict[regAdr] = regVal
+            else:
+                raise MissingConfigurationException(regName)
+        self.fromBinaryDict(cfgDict)
+                
 
             
         
