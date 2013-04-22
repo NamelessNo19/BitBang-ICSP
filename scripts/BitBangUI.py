@@ -22,7 +22,7 @@ def dumpMenu():
     
 def clockSet():
     while True:
-        input = dlg.inputBox("Enter the clock target (Hz):", "20000")
+        input = dlg.inputBox("Enter the clock target (Hz):", "50000")
         
         if input == None:
             return
@@ -335,7 +335,7 @@ if __name__ == '__main__':
     if not pic.initialized:
         print("FATAL: Initialization failed.")
         exit()
-    pic.setClockTarget(20000)
+    pic.setClockTarget(50000)
     print("Clock set to %d Hz." % pic.getClock())
     print("Connecting to target ...")
     
