@@ -221,6 +221,12 @@ inline void setAccessToFlash()
   cmdOut(CMD_OUT_CI, 0x9CA6);  // BCF  EECON1, CFGS
 }
 
+inline void setAccessToConfig()
+{
+  cmdOut(CMD_OUT_CI, 0x8EA6);  // BSF  EECON1, EEPGD
+  cmdOut(CMD_OUT_CI, 0x8CA6);  // BSF  EECON1, CFGS
+}
+
 inline void enableWrite()
 {
 	cmdOut(CMD_OUT_CI, 0x84A6);  // BSF  EECON1, WREN
@@ -288,7 +294,7 @@ void writeConfig (const uint32_t confReg, const uint8_t conf)
  if (confReg < 0x300000L)
    return;
    
-  setAccessToFlash();
+  setAccessToConfig();
   setTablePtr(confReg);
   
   uint16_t payload = conf;
@@ -297,6 +303,7 @@ void writeConfig (const uint32_t confReg, const uint8_t conf)
     
  cmdOut(CMD_OUT_TBWR_SP, payload);
  clkFlashWrite(); 
+ setAccessToFlash();
   
 }
 
