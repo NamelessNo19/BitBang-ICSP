@@ -267,6 +267,42 @@ inline void performRowErase()
 	clkFlashWrite();
 }
 
+inline void loadEEPROMWriteBuffer(uint16_t adr, uint8_t data)
+{
+  setEEPROMAdrPtr(adr);
+  cmdOut(CMD_OUT_CI, 0x0E00 | data);
+  cmdOut(CMD_OUT_CI, 0x6EA8);        // MOVWF EEDATA
+}
+
+uint8_t pollWRBit()
+{
+  cmdOut(CMD_OUT_CI, 0x50A6);  // MOVF EECON1, W, 0
+  cmdOut(CMD_OUT_CI, 0x6EF5);  // MOVWF TABLAT
+  cmdOut(CMD_OUT_CI, 0x0000);  // NOP
+  uint8_t eecon1 = cmdIn(CMD_IN_SOTBAT, 0);
+  return eecon1 & 0B00000010;   
+}
+
+uint8_t performEEPROMWrite(uint8_t maxWaitCycles)
+{
+  enableWrite();
+  cmdOut(CMD_OUT_CI, 0x82A6);  // BSF EECON1, WR
+  uint8_t i;
+  while (pollWRBit())
+  {
+	i++;
+	if (i >= maxWaitCycles)
+	{
+		disableWrite();
+		return 0;
+	}
+  }
+  clkLO;
+  delayMicroseconds(DELAY_P10);
+  disableWrite();
+  return 0xFF;
+}
+
 void writeTest()
 {
   setAccessToFlash();
