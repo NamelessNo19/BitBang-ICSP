@@ -200,6 +200,23 @@ void setTablePtr(uint32_t memAdr)
   cmdOut(CMD_OUT_CI, 0x6EF8);
 }
 
+void setEEPROMAdrPtr(uint16_t eeAdr)
+{
+  cmdOut(CMD_OUT_CI, 0x0E00 | (0x00FF & eeAdr));
+  cmdOut(CMD_OUT_CI, 0x6EA9);
+  eeAdr >>= 8;
+  cmdOut(CMD_OUT_CI, 0x0E00 | (0x00FF & eeAdr));
+  cmdOut(CMD_OUT_CI, 0x6EAA);
+}
+
+uint8_t readEEPROM()
+{
+  cmdOut(CMD_OUT_CI, 0x80A6);  // BSF EECON1, RD
+  cmdOut(CMD_OUT_CI, 0x50A8);  // MOVF EEDATA, W, 0
+  cmdOut(CMD_OUT_CI, 0x6EF5);  // MOVWF TABLAT
+  cmdOut(CMD_OUT_CI, 0x0000);  // NOP
+  return cmdIn(CMD_IN_SOTBAT, 0);
+}
 
 inline uint16_t readWord(uint32_t memAdr)
 {
@@ -225,6 +242,12 @@ inline void setAccessToConfig()
 {
   cmdOut(CMD_OUT_CI, 0x8EA6);  // BSF  EECON1, EEPGD
   cmdOut(CMD_OUT_CI, 0x8CA6);  // BSF  EECON1, CFGS
+}
+
+inline void setAccessToEEPROM()
+{
+  cmdOut(CMD_OUT_CI, 0x9EA6);  // BCF  EECON1, EEPGD
+  cmdOut(CMD_OUT_CI, 0x9CA6);  // BCF  EECON1, CFGS
 }
 
 inline void enableWrite()
