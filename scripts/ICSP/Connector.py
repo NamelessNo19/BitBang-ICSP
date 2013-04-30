@@ -176,7 +176,7 @@ class Pic18fICSP(object):
             return
         self.lib.setAccessToEEPROM()
         for i in range(len(buf)):
-            if skipPad and buf[i] != 0xFF:
+            if buf[i] != 0xFF or (not skipPad):
                 if i >= self.device.DATA_EEPROM_SIZE:
                     break
                 self.lib.loadEEPROMWriteBuffer(i, buf[i])
