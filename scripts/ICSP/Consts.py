@@ -265,6 +265,9 @@ class Pic18f4xxx(Pic18fBase):
     
     RD_ONLY_CONF = [CFG_LVP, CFG_ICPRT]
     
+    DATA_EEPROM_HEX_OFFSET   = 0xF00000
+    CONFIG_HEX_OFFSET        = 0x300000
+    
 
 class Pic18f4550(Pic18f4xxx):
     NAME                    = "PIC18F4550"
@@ -275,6 +278,7 @@ class Pic18f4550(Pic18f4xxx):
     ROW_ERASE_LENGTH_EXP    = 6
     MAX_BLOCK_INDEX         = 3
     HAS_DATA_EEPROM         = True
+    DATA_EEPROM_SIZE        = 256
     
 class UnknownPic(Pic18fBase):
     NAME                    = "Unknown Target"

@@ -20,6 +20,9 @@ class NotConnectedError(Error):
     def __str__(self):
         return "ICSP connection not started!"
 
+class DataEEPROMWriteTimeout(Error):
+    def __str__(self):
+        return "Writing of Data EEPROM exceeded time limit!"
 
 class Pic18fICSP(object):
     
@@ -116,6 +119,17 @@ class Pic18fICSP(object):
             print("WARN: Only %d bytes read at %s." % (rdlen, hex(adress)))
         return buf.raw
     
+    def readEEPROM(self, adress, length):
+        if not self.device.HAS_DATA_EEPROM:
+            return None
+        self.lib.setAccessToEEPROM()
+        ebuf = bytearray(length)
+        for i in range(length):
+            self.lib.setEEPROMAdrPtr(adress + i)
+            ebuf[i] = self.lib.readEEPROM()  
+        self.lib.setAccessToFlash()
+        return bytes(ebuf)       
+    
     def getTarget(self):
         if self.targetId == 0:
             return None
@@ -155,6 +169,26 @@ class Pic18fICSP(object):
             
         self.lib.cmdOut(self.device.CMD_OUT_TBWR_SP, buf[-2] + (buf[-1] << 8))
         self.lib.clkFlashWrite()
+        
+    
+    def writeDataEEPROM(self, buf, skipPad = True):
+        if not self.device.HAS_DATA_EEPROM:
+            return
+        self.lib.setAccessToEEPROM()
+        for i in range(len(buf)):
+            if skipPad and buf[i] != 0xFF:
+                if i >= self.device.DATA_EEPROM_SIZE:
+                    break
+                self.lib.loadEEPROMWriteBuffer(i, buf[i])
+                if self.lib.performEEPROMWrite(255) != 255:
+                    self.lib.setAccessToFlash()
+                    raise DataEEPROMWriteTimeout
+        self.lib.setAccessToFlash()
+                    
+                
+                
+             
+        
         
     
     def eraseFlashRow(self, adr):
@@ -199,6 +233,8 @@ class Pic18fICSP(object):
         self.lib.bulkErase(self.device.BLKER_CE)
         
     def eraseDataEEPROM(self):
+        if not self.device.HAS_DATA_EEPROM:
+            return
         if not self.checkState():
             return None                       
         self.lib.bulkErase(self.device.BLKER_DEP)

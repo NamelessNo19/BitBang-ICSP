@@ -191,6 +191,17 @@ class HexFile(object):
             chunkBase += self.chunkSize
             chunkOffset = 0
         return bytes(retBA)
+    
+    def hasDataInRange(self, startAdr, length):
+        offset = startAdr % self.chunkSize
+        base = startAdr - offset
+        
+        while base < startAdr + length:
+            if base in self.chunks:
+                return True
+            base += self.chunkSize
+        
+        return False 
             
             
         

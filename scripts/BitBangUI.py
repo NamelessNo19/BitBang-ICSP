@@ -10,13 +10,22 @@ import os.path
 
 
 def dumpMenu():
-    menuOptions = ["Full code memory", "Code memory sequence", "Back"]
+    menuOptions = ["Full code memory", "Code memory sequence"]
+    
+    hasEE = pic.device.HAS_DATA_EEPROM
+    
+    if hasEE:
+        menuOptions.append("Data EEPROM")       
+    menuOptions.append("Back")
+    
     sel = dlg.menu("What do you want to dump?", menuOptions)
     
     if sel == 0:
         fullDumpToFile()
     elif sel == 1:
         dumpSequence()
+    elif hasEE and sel == 2:
+        dumpEEPROM()
     else:
         return
     
@@ -66,7 +75,7 @@ def fullDumpToFile():
         return
       
     chnkSize = 128
-    chnkCount = pic.getTarget().BLOCK_SIZE * (pic.getTarget().MAX_BLOCK_INDEX + 1) // chnkSize
+    chnkCount = pic.device.BLOCK_SIZE * (pic.device.MAX_BLOCK_INDEX + 1) // chnkSize
     
     dlg.createGauge("Dumping " + str(chnkSize * chnkCount) + " Bytes to " + file.name)
     
@@ -78,6 +87,18 @@ def fullDumpToFile():
     dlg.closeGauge()
     file.close()
     dlg.msgBox("Dumping finished.")
+
+def dumpEEPROM():
+    file = queryOutputFile()    
+    if file == None:
+        return
+          
+    dlg.infoBox("Dumping Data EEPROM...")
+    ebuf = pic.readEEPROM(0, pic.device.DATA_EEPROM_SIZE)       
+    file.write(ebuf)      
+    file.close()
+    dlg.msgBox("Dumping finished.")
+    
     
 
 def dumpSequence():
@@ -85,7 +106,7 @@ def dumpSequence():
     endAdr = -1
     # Query start address
     while True:
-        input = dlg.inputBox("Please enter the start address (0 - %d):" %  pic.getTarget().MAX_CODE_ADR, "0x")
+        input = dlg.inputBox("Please enter the start address (0 - %d):" %  pic.device.MAX_CODE_ADR, "0x")
         if input == None:
             return
         try:
@@ -93,14 +114,14 @@ def dumpSequence():
         except SyntaxError:
             startAdr = -1
            
-        if startAdr < 0 or startAdr > pic.getTarget().MAX_CODE_ADR:
+        if startAdr < 0 or startAdr > pic.device.MAX_CODE_ADR:
             dlg.msgBox("Invalid address.")
         else:
             break
         
     # Query end address
     while True:
-        input = dlg.inputBox("Please enter the end address (%d - %d):" %  (startAdr, pic.getTarget().MAX_CODE_ADR), "0x")
+        input = dlg.inputBox("Please enter the end address (%d - %d):" %  (startAdr, pic.device.MAX_CODE_ADR), "0x")
         if input == None:
             return
         try:
@@ -108,7 +129,7 @@ def dumpSequence():
         except SyntaxError:
             endAdr = -1
             
-        if endAdr < startAdr or endAdr > pic.getTarget().MAX_CODE_ADR:
+        if endAdr < startAdr or endAdr > pic.device.MAX_CODE_ADR:
             dlg.msgBox("Invalid address.")
         else:
             break
@@ -180,7 +201,7 @@ def confEditMenu():
             dlg.noCancel = False
             return
         else:
-            if conf.optList[sel] in pic.getTarget().RD_ONLY_CONF:
+            if conf.optList[sel] in pic.device.RD_ONLY_CONF:
                 dlg.msgBox("This value cannot be changed.")
             else:
                 valList = conf.optList[sel].values
@@ -207,7 +228,7 @@ def eraseMenu():
                 dlg.msgBox("Chip Erase complete.")
         elif sel == 1:
             blockList = ["Boot Block"]
-            for i in range(pic.getTarget().MAX_BLOCK_INDEX + 1):
+            for i in range(pic.device.MAX_BLOCK_INDEX + 1):
                 blockList.append("Block " + str(i))
             blockSel = dlg.checkList("Select the blocks to erase", blockList)
             if blockSel != None and len(blockSel) > 0 and dlg.yesNo("Do you really want to erase the selected blocks?"):
@@ -215,7 +236,7 @@ def eraseMenu():
                     pic.eraseBlock(blk - 1)
                 dlg.msgBox("Code Memory Erase complete.")
         elif sel == 2:
-            if not pic.getTarget().HAS_DATA_EEPROM:
+            if not pic.device.HAS_DATA_EEPROM:
                 dlg.msgBox("No Data EEPROM present on target.")
             elif dlg.yesNo("Do you really want to erase the Data EEPROM?"):
                 pic.eraseDataEEPROM()
@@ -236,7 +257,7 @@ def queryHexFile():
             return None
         
         try:
-            hf = HexFile.HexFile(fpath, 1 << pic.getTarget().ROW_WRITE_LENGTH_EXP)
+            hf = HexFile.HexFile(fpath, 1 << pic.device.ROW_WRITE_LENGTH_EXP)
         except HexFile.Error as e:
             dlg.msgBox("Parsing Hex File failed: \n" + str(e))
         else:
@@ -249,24 +270,37 @@ def writeHex():
     if hf == None:
         return
     
-    hxData = {codeAdr : hf.chunks[codeAdr] for codeAdr in hf.chunks if codeAdr < pic.getTarget().MAX_CODE_ADR }    
+    hxData = {codeAdr : hf.chunks[codeAdr] for codeAdr in hf.chunks if codeAdr < pic.device.MAX_CODE_ADR }    
     
     title = str(len(hxData) * hf.chunkSize) + " Bytes parsed from Hex File."
-    hasConf = 0x300000 in hf.chunks
+    hasConf = pic.device.CONFIG_HEX_OFFSET in hf.chunks
+    
+    hasEE = False
+    if pic.device.HAS_DATA_EEPROM:
+        hasEE = hf.hasDataInRange(pic.device.DATA_EEPROM_HEX_OFFSET, pic.device.DATA_EEPROM_SIZE)
+    
+    
+    
     wrtOpts = ["Perform Chip Erase", "Write code memory", "Verify written memory"]
     
     if hasConf:
         wrtOpts.append("Write Configuration")
         wrtOpts.append("Verify Configuration")
-        hexCfg = PicConfig(pic.getTarget())
+        hexCfg = PicConfig(pic.device)
         try:
             hexCfg.fromHexFile(hf)
         except MissingConfigurationException as mce:
             dlg.msgBox("Configuration Error: " + str(mce))
             return
+        
+    if hasEE:
+        wrtOpts.append("Write Data EEPROM")
+        wrtOpts.append("Verify Data EEPROM")
+        eeDat = hf.read(pic.device.DATA_EEPROM_HEX_OFFSET, pic.device.DATA_EEPROM_SIZE)
+        
      
     dlg.defaultNo = True    
-    dlgSel = dlg.checkList(title, wrtOpts, [True] * 5)
+    dlgSel = dlg.checkList(title, wrtOpts, [True] * len(wrtOpts))
     dlg.defaultNo = False
     
     if dlgSel == None:
@@ -275,9 +309,16 @@ def writeHex():
     performCE = 0 in dlgSel
     writeCM = 1 in dlgSel
     verCM = 2 in dlgSel
-    writeCFG = 3 in dlgSel
-    verCFG = 4 in dlgSel
-    
+    if hasConf:
+        writeCFG = 3 in dlgSel
+        verCFG = 4 in dlgSel
+        writeEE = 5 in dlgSel
+        verEE = 6 in dlgSel
+    else:
+        writeCFG = False
+        verCFG = False
+        writeEE = 3 in dlgSel
+        verEE = 4 in dlgSel
     
     datLen = len(hxData)
     
@@ -314,16 +355,23 @@ def writeHex():
         if rbCfg != hexCfg.toBinaryDict():
             dlg.msgBox("Configuration mismatch!")
             return
+    if writeEE: # Write Data EEPROM
+        dlg.infoBox("Writing Data EEPROM...")
+        pic.writeDataEEPROM(eeDat)
+    if verEE:   # Verify Data EEPROM
+        rbEE = pic.readEEPROM(0, pic.device.DATA_EEPROM_SIZE)
+        if rbEE != eeDat:
+            dlg.msgBox("Data EEPROM mismatch!")
+            return
     
     dlg.msgBox("All operations completed.")
     return
 
- # ----- End Of writeHex ----       
+# ----- End Of writeHex ----       
         
      
             
-                      
- # ----- MAIN -----           
+# ----- MAIN -----           
     
         
 if __name__ == '__main__':
@@ -344,7 +392,7 @@ if __name__ == '__main__':
         exit()
     
     print("Connected to: " + pic.getTargetName())
-    conf = PicConfig(pic.getTarget())
+    conf = PicConfig(pic.device)
     print("Starting UI ...")
     
     dlg = Dlg()

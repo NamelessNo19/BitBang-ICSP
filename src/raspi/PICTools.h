@@ -24,6 +24,8 @@ uint8_t cmdIn(uint8_t cmd, uint8_t dat);
 void clkFlashWrite();
 void setTablePtr8(const uint8_t up, const uint8_t high, const uint8_t low);
 void setTablePtr(uint32_t memAdr);
+void setEEPROMAdrPtr(uint16_t eeAdr);
+uint8_t readEEPROM();
 inline uint16_t readWord(uint32_t memAdr);
 inline uint8_t readByte();
 inline void setAccessToFlash();
