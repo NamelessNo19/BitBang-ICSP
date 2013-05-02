@@ -119,7 +119,7 @@ class HexFile(object):
             if size != 2:
                 raise FormatError(self.name, lineNo, 'Length of ESAR does not equal 2.') 
             else:
-                self.curBaseAdr = (self.curBaseAdr & 0xFFFF0000) | (data[4] * 256 + data[5])
+                self.curBaseAdr = (self.curBaseAdr & 0xFFF0000F) | ((data[4] * 256 + data[5]) << 4)
         elif lineType == 4:
             # Extended Linear Address Record
             if size != 2:
