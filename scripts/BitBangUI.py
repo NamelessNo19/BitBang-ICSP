@@ -10,7 +10,7 @@ import os.path
 
 
 def dumpMenu():
-    menuOptions = ["Full code memory", "Code memory sequence"]
+    menuOptions = ["Dump to Hex File", "Full code memory", "Code memory sequence"]
     
     hasEE = pic.device.HAS_DATA_EEPROM
     
@@ -21,10 +21,12 @@ def dumpMenu():
     sel = dlg.menu("What do you want to dump?", menuOptions)
     
     if sel == 0:
-        fullDumpToFile()
+        dumpToHex()
     elif sel == 1:
+        fullDumpToFile()
+    elif sel == 2:
         dumpSequence()
-    elif hasEE and sel == 2:
+    elif hasEE and sel == 3:
         dumpEEPROM()
     else:
         return
@@ -368,6 +370,62 @@ def writeHex():
     return
 
 # ----- End Of writeHex ----       
+
+
+def dumpToHex():
+    # Query output
+    while True:
+        path = dlg.fselect("/home/")
+        if path == None:
+            return None  
+        
+        if not (path.lower().endswith(".hex") or path.endswith('\\')):
+            path += ".hex"
+            
+        if os.path.isdir(path) or os.path.isfile(path):
+            dlg.msgBox("File already exists or invalid path.")
+        else:
+            break;      
+    dmpHf = HexFile.HexFile(path, readOnly = False)
+    
+    # Dump Code Memory
+    chnkSize = 128
+    chnkCount = pic.device.BLOCK_SIZE * (pic.device.MAX_BLOCK_INDEX + 1) // chnkSize   
+    dlg.createGauge("Dumping " + str(chnkSize * chnkCount) + " Bytes to Hex File.")   
+    for i in range(chnkCount):
+        dlg.updateGauge((i * 100) // chnkCount)
+        buf = pic.readFlash(i * chnkSize, chnkSize)
+        
+        allPad = True
+        for b in buf:
+            if int(b) != 0xFF:
+                allPad = False
+                break 
+            
+        if not allPad:   
+            dmpHf.add(i * chnkSize, buf)     
+                
+    dlg.closeGauge()
+    
+    # Dump Data EEPROM
+    if pic.device.HAS_DATA_EEPROM:
+        dlg.infoBox("Dumping Data EEPROM...")
+        ebuf = pic.readEEPROM(0, pic.device.DATA_EEPROM_SIZE) 
+        dmpHf.add(pic.device.DATA_EEPROM_HEX_OFFSET, ebuf) 
+    
+    # Dump Configuration
+    dlg.infoBox("Dumping Configuration...")
+    confDict = pic.readConfiguration()
+    conBAr = bytearray(1)
+    for cAdr in confDict:
+        conBAr[0] = confDict[cAdr]
+        dmpHf.chunks[cAdr] = bytes(conBAr)
+    dmpHf.writeOut()
+    
+    
+    
+    
+    
         
      
             

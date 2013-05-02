@@ -225,9 +225,21 @@ class HexFile(object):
         
         return False
     
-    def add(self, adr, data):
+    def add(self, adr, data, skipPad = True):
         if self.rdOnly:
             raise AccessError()
+        
+        padSkipRev = 0
+        for b in reversed(data):
+            if int(b) == self.pad:
+                padSkipRev += 1
+            else:
+                break
+            
+        if padSkipRev == len(data):
+            return
+        elif padSkipRev != 0:
+            data = data[0 : -1 * padSkipRev]
         
         self.curBaseAdr = adr & 0xFFFF0000;
         self._addSegment(adr & 0xFFFF, data, -1)
@@ -253,11 +265,12 @@ class HexFile(object):
                 ckSum = (0x100 - ckSum) & 0xFF
                 self.file.write(":02000004%02X%02X%02X\n" % ((cnBase >> 8), (cnBase & 0xFF), ckSum))
                 base = cnBase
-             
-            ckSum = self.chunkSize
+            
+            cLength =  len(self.chunks[cAdr])
+            ckSum = cLength
             ckSum += loAdr & 0xFF
             ckSum += loAdr >> 8
-            self.file.write(":%02X%04X00" % (self.chunkSize, loAdr))
+            self.file.write(":%02X%04X00" % (cLength, loAdr))
             datStr = ""
             
             for b in self.chunks[cAdr]:
