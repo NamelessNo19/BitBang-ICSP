@@ -6,12 +6,12 @@ class Error(Exception):
     pass
 
 class InputError(Error):
-    """Exception raised when unable to read file."""
+    """Exception raised when unable to open file."""
     def __init__(self, fPath):
         self.fPath = fPath
         
     def __str__(self):
-        return "Unable to open %s for reading." % self.fPath
+        return "Unable to open %s." % self.fPath
     
 class FileFormatError(Error):
     """Exception raised when input in not a Hex File."""
@@ -40,8 +40,12 @@ class ChecksumError(Error):
         self.csExp = csExp
         
     def __str__(self):
-        return "Checksum mismatch in " + self.fName + " (Line " + str(self.line) + "): " + "Expected: " +\
+        return "Checksum mismatch in " + self.fName + " (Line " + str(self.line) + "): " + "Expected: " + \
              hex(self.csExp) + " Is: " + hex(self.csIs) + "."
+             
+class AccessError(Error):
+    def __str__(self):
+        return "Cannot write to read-only file."
 
  
 class HexFile(object):
@@ -49,15 +53,25 @@ class HexFile(object):
     Parses an Intel HexFile to binary data.
     '''
 
-    def __init__(self, fPath, bytesPerChunk = 4, padByte = 0xFF):
+    def __init__(self, fPath, bytesPerChunk=32, padByte=0xFF, readOnly=True):
         '''
         Constructor
         '''
         self.chunkSize = bytesPerChunk
-        self.chunks= {}
+        self.chunks = {}
         self.pad = padByte
+        self.path = fPath
+        self.rdOnly = readOnly
+        
+        if path.isdir(fPath):
+            raise InputError(fPath);
+        
+        if readOnly and (not path.isfile(fPath)):
+            raise InputError(fPath);
+            
         try:
-            self.file = open(fPath, 'r')
+            self.file = open(fPath, 'r' if readOnly else 'a+')
+            self.file.seek(0)
         except IOError:
             self.file = None
             raise InputError(fPath)
@@ -67,10 +81,15 @@ class HexFile(object):
                 self._parseFile()
             except UnicodeDecodeError:
                 raise FileFormatError(fPath)
-            finally:
-                self.file.close()
+
+
+    def __del__(self):
+        if not self.file == None:
+            self.file.close()
+        
             
     def _parseFile(self):
+        
         lineNo = 1
         self.curBaseAdr = 0
         
@@ -90,7 +109,10 @@ class HexFile(object):
                 break
             lineNo += 1
         else:
-            raise FormatError(self.name, lineNo, 'Unexpected end of file.')  
+            if lineNo != 1:
+                raise FormatError(self.name, lineNo, 'Unexpected end of file.')  
+        
+        self.file.seek(0)
                 
     
     def _parseLine(self, data, lineNo): 
@@ -144,7 +166,7 @@ class HexFile(object):
         
         while pos < len(data):
             btw = min(len(data) - pos, self.chunkSize)
-            self._updateChunk(adr, 0, data[pos:pos+btw], lineNo)
+            self._updateChunk(adr, 0, data[pos:pos + btw], lineNo)
             adr += btw
             pos += btw
         
@@ -172,7 +194,7 @@ class HexFile(object):
                     
         self.chunks.update({chunkAdr : bytes(newChunk)})
         
-    def read(self, offset, length, pad = True):
+    def read(self, offset, length, pad=True):
         chunkOffset = offset % self.chunkSize
         chunkBase = offset - chunkOffset
 
@@ -201,9 +223,52 @@ class HexFile(object):
                 return True
             base += self.chunkSize
         
-        return False 
+        return False
+    
+    def add(self, adr, data):
+        if self.rdOnly:
+            raise AccessError()
+        
+        self.curBaseAdr = adr & 0xFFFF0000;
+        self._addSegment(adr & 0xFFFF, data, -1)
+        
+    
+    def writeOut(self):
+        if self.rdOnly:
+            raise AccessError()
+        
+        self.file.seek(0)
+        self.file.truncate()
+        base = 0
+        self.file.write(":020000040000FA\n")    # SOF
+        
+        for cAdr in sorted(self.chunks.keys()):
+            cnBase = cAdr >> 16
+            loAdr = cAdr & 0xFFFF
+             
+            if base != cnBase:
+                ckSum = 6
+                ckSum += cnBase & 0xFF
+                ckSum += cnBase >> 8
+                ckSum = (0x100 - ckSum) & 0xFF
+                self.file.write(":02000004%02X%02X%02X\n" % ((cnBase >> 8), (cnBase & 0xFF), ckSum))
+                base = cnBase
+             
+            ckSum = self.chunkSize
+            ckSum += loAdr & 0xFF
+            ckSum += loAdr >> 8
+            self.file.write(":%02X%04X00" % (self.chunkSize, loAdr))
+            datStr = ""
             
-            
+            for b in self.chunks[cAdr]:
+                ckSum += b                    
+                datStr += "%02X" % int(b)
+                
+            ckSum = (0x100 - ckSum) & 0xFF
+            self.file.write("%s%02X\n" % (datStr, ckSum))
+        
+        self.file.write(":00000001FF\n")  # EOF
+        
         
         
         
@@ -211,14 +276,10 @@ class HexFile(object):
 # Testing       
 if __name__ == '__main__':
     print('Go.')
-    try:
-        hf = HexFile('D:\\blink.hex')
-    except FormatError as fe:
-        print(fe)
-    else:
-        for key in hf.chunks:
-            print("0x%0.8X: " % key, hf.chunks[key])
+    newHf = HexFile('D:\\blub.hex', readOnly = False)
+    
+    for key in newHf.chunks:
+            print("0x%0.8X: " % key, newHf.chunks[key])
             
-            
-        
-        
+    newHf.add(0x00000008, bytes('ABCDEF', 'ascii'))
+    newHf.writeOut()
