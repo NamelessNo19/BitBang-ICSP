@@ -30,7 +30,7 @@ class Pic18fBase(object):
     BLKER_CEP_B4            = 0x1080
     BLKER_CEP_B5            = 0x2080
     
-class Pic18f4xxx(Pic18fBase):
+class Pic18f2xxx_4xxx(Pic18fBase):
     
     CONFIG_REG_ADRS = {
     "MEM_CONFIG1L" : 0x300000,
@@ -269,12 +269,23 @@ class Pic18f4xxx(Pic18fBase):
     CONFIG_HEX_OFFSET        = 0x300000
     
 
-class Pic18f4550(Pic18f4xxx):
+class Pic18f4550(Pic18f2xxx_4xxx):
     NAME                    = "PIC18F4550"
     DEV_ID                  = 0x1200
     MAX_CODE_ADR            = 0x007FFF
     BLOCK_SIZE              = 8192
-    ROW_WRITE_LENGTH_EXP     = 5
+    ROW_WRITE_LENGTH_EXP    = 5
+    ROW_ERASE_LENGTH_EXP    = 6
+    MAX_BLOCK_INDEX         = 3
+    HAS_DATA_EEPROM         = True
+    DATA_EEPROM_SIZE        = 256
+    
+class Pic18f2550(Pic18f2xxx_4xxx):
+    NAME                    = "PIC18F2550"
+    DEV_ID                  = 0x1240
+    MAX_CODE_ADR            = 0x007FFF
+    BLOCK_SIZE              = 8192
+    ROW_WRITE_LENGTH_EXP    = 5
     ROW_ERASE_LENGTH_EXP    = 6
     MAX_BLOCK_INDEX         = 3
     HAS_DATA_EEPROM         = True
@@ -292,5 +303,5 @@ class UnknownPic(Pic18fBase):
     
 
     
-TargetList = [Pic18f4550]
+TargetList = [Pic18f4550, Pic18f2550]
     

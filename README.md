@@ -22,6 +22,7 @@ I know. But that's no question.
 
 ##### What MCUs are supported?
  * [Microchip PIC18F4550](http://www.microchip.com/wwwproducts/Devices.aspx?dDocName=en010300)
+ * [Microchip PIC18F2550](http://www.microchip.com/wwwproducts/Devices.aspx?dDocName=en010280)
  * [Atmel ATTiny13A](http://www.atmel.com/devices/attiny13a.aspx) (Barely.)
 
 ##### How do I use this?
